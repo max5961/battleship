@@ -10,20 +10,13 @@ function Square({ className, onClick }: SquareProps): React.ReactElement {
 }
 
 function GameContainer(): React.ReactElement {
-    const board: Array<Array<number>> = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ];
+    const board: Array<Array<number>> = new Array(10)
+        .fill(null)
+        .map(() => new Array(10).fill(0));
 
-    const [currBoard, setCurrBoard] = useState<Array<Array<number>>>(board.slice());
+    const [currBoard, setCurrBoard] = useState<Array<Array<number>>>(
+        board.slice(),
+    );
 
     function handleSquareClick(key: string): void {
         const [yIndex, xIndex] = key.split(",");
@@ -35,37 +28,39 @@ function GameContainer(): React.ReactElement {
         setCurrBoard(nextBoard);
     }
 
-    const squares: Array<React.ReactElement> = currBoard
-        .map((row, yIndex) => {
-            return row.map((square, xIndex) => {
-                const key: string = `${yIndex},${xIndex}`;
-                if (square === 0) {
-                    const className = "square";
-                    return (
-                        <Square
-                            key={key}
-                            className={className}
-                            onClick={() => handleSquareClick(key)}
-                        />
-                    );
-                } else {
-                    const className = "square taken";
-                    return (
-                        <Square
-                            key={key}
-                            className={className}
-                            onClick={() => handleSquareClick(key)}
-                        />
-                    );
-                }
-            });
-        })
-        .flat();
+    function getComponentSquares(): Array<React.ReactElement> {
+        return currBoard
+            .map((row, yIndex) => {
+                return row.map((square, xIndex) => {
+                    const key: string = `${yIndex},${xIndex}`;
+                    if (square === 0) {
+                        const className = "square";
+                        return (
+                            <Square
+                                key={key}
+                                className={className}
+                                onClick={() => handleSquareClick(key)}
+                            />
+                        );
+                    } else {
+                        const className = "square taken";
+                        return (
+                            <Square
+                                key={key}
+                                className={className}
+                                onClick={() => handleSquareClick(key)}
+                            />
+                        );
+                    }
+                });
+            })
+            .flat();
+    }
 
     return (
         <div id="game-container">
             <div className="game-board computer"></div>
-            <div className="game-board player">{squares}</div>
+            <div className="game-board player">{getComponentSquares()}</div>
             <div className="sidebar">
                 <button className="random-placement">Random Placement</button>
                 <button className="reset-placement">Reset</button>
