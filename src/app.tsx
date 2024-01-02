@@ -1,3 +1,4 @@
+import { Board } from "./Board";
 import React from "react";
 import { useState } from "react";
 
@@ -10,9 +11,13 @@ export default function App(): React.ReactElement {
 }
 
 function Game(): React.ReactElement {
+    const randomBoard = new Board();
+    randomBoard.generateRandomPlacement();
+
     const [playerBoard, setPlayerBoard] = useState<Array<Array<number>>>(
-        new Array(10).fill(null).map(() => new Array(10).fill(0)),
+        randomBoard.board,
     );
+    const [boardIsPlaced, setBoardIsPlaced] = useState<boolean>(false);
 
     return (
         <div id="game">
@@ -20,9 +25,15 @@ function Game(): React.ReactElement {
             <PlayerBoard
                 playerBoard={playerBoard}
                 setPlayerBoard={setPlayerBoard}
+                boardIsPlaced={boardIsPlaced}
             />
             <div className="sidebar">
-                <button className="random-placement">Random Placement</button>
+                <button
+                    className="validate-board"
+                    onClick={() => setBoardIsPlaced(true)}
+                >
+                    Validate Board
+                </button>
                 <button className="reset-placement">Reset</button>
                 <div className="ships-container"></div>
             </div>
@@ -33,19 +44,25 @@ function Game(): React.ReactElement {
 interface PlayerBoardProps {
     playerBoard: Array<Array<number>>;
     setPlayerBoard: (newBoard: Array<Array<number>>) => void;
+    boardIsPlaced: boolean;
 }
 function PlayerBoard({
     playerBoard,
     setPlayerBoard,
+    boardIsPlaced,
 }: PlayerBoardProps): React.ReactElement {
     function handleSquareClick(key: string): void {
-        const [yIndex, xIndex] = key.split(",");
-        const nextBoard = playerBoard.slice();
+        if (!boardIsPlaced) {
+            const [yIndex, xIndex] = key.split(",");
+            const nextBoard = playerBoard.slice();
 
-        let currNumber = nextBoard[yIndex][xIndex];
-        currNumber ? (currNumber = 0) : (currNumber = 1);
-        nextBoard[yIndex][xIndex] = currNumber;
-        setPlayerBoard(nextBoard);
+            let currNumber = nextBoard[yIndex][xIndex];
+            currNumber ? (currNumber = 0) : (currNumber = 1);
+            nextBoard[yIndex][xIndex] = currNumber;
+            setPlayerBoard(nextBoard);
+        } else {
+            return;
+        }
     }
 
     function getComponentSquares(): Array<React.ReactElement> {
@@ -58,15 +75,28 @@ function PlayerBoard({
                         return (
                             <Square
                                 key={key}
+                                id={key}
+                                className={className}
+                                onClick={() => handleSquareClick(key)}
+                            />
+                        );
+                    } else if (square === 1) {
+                        const className = "square taken";
+                        return (
+                            <Square
+                                key={key}
+                                id={key}
                                 className={className}
                                 onClick={() => handleSquareClick(key)}
                             />
                         );
                     } else {
-                        const className = "square taken";
+                        // square === 2
+                        const className = "square damaged";
                         return (
                             <Square
                                 key={key}
+                                id={key}
                                 className={className}
                                 onClick={() => handleSquareClick(key)}
                             />
@@ -81,10 +111,10 @@ function PlayerBoard({
 }
 
 interface SquareProps {
-    key: string;
+    id: string;
     className: string;
     onClick: () => void;
 }
-function Square({ key, className, onClick }: SquareProps): React.ReactElement {
-    return <div key={key} className={className} onClick={onClick}></div>;
+function Square({ id, className, onClick }: SquareProps): React.ReactElement {
+    return <div id={id} className={className} onClick={onClick}></div>;
 }
