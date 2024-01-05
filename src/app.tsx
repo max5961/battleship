@@ -12,7 +12,7 @@ export default function App(): React.ReactElement {
 
 function Game(): React.ReactElement {
     const randomBoard = new Board();
-    randomBoard.generateRandomPlacement();
+    randomBoard.createRandomBoard();
 
     const [playerBoard, setPlayerBoard] = useState<Array<Array<number>>>(
         randomBoard.board,

@@ -186,7 +186,7 @@ export class Board {
         return ship;
     }
 
-    generateRandomPlacement(): void {
+    createRandomBoard(): void {
         let validBoard = false;
         while (!validBoard) {
             this.resetBoard();
