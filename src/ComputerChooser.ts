@@ -1,4 +1,5 @@
 import { Board } from "./Board";
+import { negativeSortShip, positiveSortShip } from "./sortShipArray";
 
 class ComputerChooser {
     opponentBoard: Board | null;
@@ -121,50 +122,78 @@ class ComputerChooser {
     takeShot(coord: Array<number>): void {
         if (this.shotIsOnTarget(coord)) {
             this.markHit(coord);
+            this.currentTargetShip.push(coord);
         } else {
             this.markMiss(coord);
         }
     }
 
+    // if there is a current x or y direction to search along
+    takeDirectionalShot(): void {
+        if (!this.currentDirection) {
+            throw new Error("currentDirection property is null");
+        }
+
+        const [cx, cy] = this.lastHitCoord!;
+        const [dx, dy] = this.currentDirection;
+        this.nextCoord = [cx + dx, cy + dy];
+        this.takeShot(this.nextCoord);
+
+        // HANDLE AFTER THE SHOT IS TAKEN
+        // shooting at nextCoord sinks a ship
+        // reset properties to default
+        const x = true;
+        if (!x) {
+            this.nextCoord = null;
+            this.lastHitCoord = null;
+            this.targetFound = false;
+            return;
+        }
+
+        // shooting at nextCoord is a hit
+        if (!this.shotIsOnTarget(this.nextCoord)) {
+            this.lastHitCoord = this.nextCoord;
+        }
+
+        // shooting at nextCoord is a miss
+        // get the opposite side of the ship from the currentTargetShip array
+        if (!this.shotIsOnTarget(this.nextCoord)) {
+            // reverse the currentDirection
+            for (let i = 0; i < this.currentDirection.length; i++) {
+                this.currentDirection[i] === 1
+                    ? (this.currentDirection[i] = -1)
+                    : (this.currentDirection[i] = 1);
+            }
+            // get the orientation of currentDirection
+            // positive: left -> right, up -> down
+            // negative: right -> left, down -> up
+            const positive: boolean =
+                this.currentDirection[0] === 1 ||
+                this.currentDirection[1] === 1;
+
+            // sort the mapped hits from currentTargetShip
+            positive
+                ? (this.currentTargetShip = positiveSortShip(
+                      this.currentTargetShip,
+                  ))
+                : (this.currentTargetShip = negativeSortShip(
+                      this.currentTargetShip,
+                  ));
+
+            // last index of currentTargetShip is nextCoord
+            this.nextCoord =
+                this.currentTargetShip[this.currentTargetShip.length - 1];
+        }
+    }
+
     // target area HAS been found
     takeFocusedShot(): void {
-        // there IS a current x or y direction to search along
+        // currentDirection is already known
         if (this.currentDirection) {
-            const [cx, cy] = this.lastHitCoord!;
-            const [dx, dy] = this.currentDirection;
-            this.nextCoord = [cx + dx, cy + dy];
-            this.takeShot(this.nextCoord);
-
-            // shooting at nextCoord sinks a ship
-            // reset properties to default
-            const x = true;
-            if (!x) {
-                this.nextCoord = null;
-                this.lastHitCoord = null;
-                this.targetFound = false;
-                return;
-            }
-
-            // shooting at nextCoord is a hit
-            if (!this.shotIsOnTarget(this.nextCoord)) {
-                this.lastHitCoord = this.nextCoord;
-            }
-
-            // shooting at nextCoord is a miss
-            if (!this.shotIsOnTarget(this.nextCoord)) {
-                // get the opposite side of the ship from the currentTargetShip array
-
-                // reverse the currentDirection
-                for (let i = 0; i < this.currentDirection.length; i++) {
-                    this.currentDirection[i] === 1
-                        ? (this.currentDirection[i] = -1)
-                        : (this.currentDirection[i] = 1);
-                }
-                // currentDirection
-                const positive =
-                    this.currentDirection[0] === 1 ||
-                    this.currentDirection[1] === 1;
-            }
+            this.takeDirectionalShot();
+            return;
         }
+
+        // currentDirection is not yet known
     }
 }
