@@ -185,12 +185,47 @@ const validBoards: Array<Array<Array<number>>> = [
         [1, 0, 0, 0, 1, 1, 1, 0, 1, 0],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ],
+    [
+        [1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        [1, 0, 1, 0, 1, 1, 0, 1, 0, 0],
+        [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 1, 0, 0, 1, 1, 1, 0, 1, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    [
+        [1, 0, 0, 0, 0, 0, 1, 1, 0, 1],
+        [1, 0, 1, 1, 1, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+    ],
+    [
+        [0, 1, 1, 0, 1, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 1, 1, 1, 0, 0, 1],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    ],
 ];
 
 describe("Board.boardIsValid()", () => {
     for (const invalidBoard of invalidBoards) {
-        test(`Board [${invalidBoard.description}] should be invalid (returns false)
-            ${invalidBoard} `, () => {
+        test(`Board [${invalidBoard.description}] should be invalid (return false)`, () => {
             const board = new Board();
             board.board = invalidBoard.board;
             const result = board.boardIsValid();
@@ -199,11 +234,25 @@ describe("Board.boardIsValid()", () => {
     }
 
     for (let i = 0; i < validBoards.length; i++) {
-        test(`Valid Board #${i} should be valid`, () => {
+        test(`Board #${i} is valid (return true)`, () => {
             const board = new Board();
             board.board = validBoards[i];
             const result = board.boardIsValid();
             expect(result).toBe(true);
         });
     }
+});
+describe("Board.createRandomBoard()", () => {
+    test("Create a valid board - 1000 iterations", () => {
+        let allAreValid: boolean = true;
+        for (let i = 0; i < 1000; i++) {
+            const board = new Board();
+            board.createRandomBoard();
+            const currentIsValid = board.boardIsValid();
+            if (!currentIsValid) {
+                allAreValid = false;
+            }
+        }
+        expect(allAreValid).toBe(true);
+    });
 });
