@@ -1,4 +1,4 @@
-import _ from "lodash";
+import { cloneDeep } from "lodash";
 import { ComputerChooser } from "../ComputerChooser";
 // ***including the first shot on target, carriers must be destroyed in: shots <= 8 && shots >=5
 interface TestEfficientSink {
@@ -80,80 +80,80 @@ describe("ComputerChooser.takeTurn() - first shot is on target", () => {
     test.each([
         // Test 1: carrier horizontal, start at beginning of ship
         [
-            _.cloneDeep(carrierHorizontal.opponentBoard),
-            _.cloneDeep(carrierHorizontal.opponentFleet),
+            cloneDeep(carrierHorizontal.opponentBoard),
+            cloneDeep(carrierHorizontal.opponentFleet),
             carrierHorizontal.startCoord,
         ],
         // Test 2: carrier vertical, start at beginning of ship
         [
-            _.cloneDeep(carrierVertical.opponentBoard),
-            _.cloneDeep(carrierVertical.opponentFleet),
+            cloneDeep(carrierVertical.opponentBoard),
+            cloneDeep(carrierVertical.opponentFleet),
             carrierVertical.startCoord,
         ],
         // Test 3: carrier horizontal, start at end of ship
         [
-            _.cloneDeep(carrierHorizontal.opponentBoard),
-            _.cloneDeep(carrierHorizontal.opponentFleet),
+            cloneDeep(carrierHorizontal.opponentBoard),
+            cloneDeep(carrierHorizontal.opponentFleet),
             carrierHorizontal.endCoord,
         ],
         // Test 4: carrier vertical, start at end of ship
         [
-            _.cloneDeep(carrierVertical.opponentBoard),
-            _.cloneDeep(carrierVertical.opponentFleet),
+            cloneDeep(carrierVertical.opponentBoard),
+            cloneDeep(carrierVertical.opponentFleet),
             carrierVertical.endCoord,
         ],
         // Test 5: carrier horizontal, start in middle of ship
         [
-            _.cloneDeep(carrierHorizontal.opponentBoard),
-            _.cloneDeep(carrierHorizontal.opponentFleet),
+            cloneDeep(carrierHorizontal.opponentBoard),
+            cloneDeep(carrierHorizontal.opponentFleet),
             [1, 3],
         ],
         // Test 6: carrier horizontal, start in middle of ship
         [
-            _.cloneDeep(carrierHorizontal.opponentBoard),
-            _.cloneDeep(carrierHorizontal.opponentFleet),
+            cloneDeep(carrierHorizontal.opponentBoard),
+            cloneDeep(carrierHorizontal.opponentFleet),
             [1, 4],
         ],
         // Test 7: carrier horizontal, start in middle of ship
         [
-            _.cloneDeep(carrierHorizontal.opponentBoard),
-            _.cloneDeep(carrierHorizontal.opponentFleet),
+            cloneDeep(carrierHorizontal.opponentBoard),
+            cloneDeep(carrierHorizontal.opponentFleet),
             [1, 2],
         ],
         // Test 8: carrier vertical, start in middle of ship
         [
-            _.cloneDeep(carrierVertical.opponentBoard),
-            _.cloneDeep(carrierVertical.opponentFleet),
+            cloneDeep(carrierVertical.opponentBoard),
+            cloneDeep(carrierVertical.opponentFleet),
             [3, 1],
         ],
         // Test 9: carrier vertical, start in middle of ship
         [
-            _.cloneDeep(carrierVertical.opponentBoard),
-            _.cloneDeep(carrierVertical.opponentFleet),
+            cloneDeep(carrierVertical.opponentBoard),
+            cloneDeep(carrierVertical.opponentFleet),
             [4, 1],
         ],
         // Test 10: carrier vertical, start in middle of ship
         [
-            _.cloneDeep(carrierVertical.opponentBoard),
-            _.cloneDeep(carrierVertical.opponentFleet),
+            cloneDeep(carrierVertical.opponentBoard),
+            cloneDeep(carrierVertical.opponentFleet),
             [2, 1],
         ],
         // Test 11: carrier horizontal on edge, start beginning
         [
-            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
-            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            cloneDeep(carrierEdgeHorizontal.opponentFleet),
             carrierEdgeHorizontal.startCoord,
         ],
         // Test 12: carrier horizontal on edge, start end
         [
-            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
-            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            cloneDeep(carrierEdgeHorizontal.opponentFleet),
             carrierEdgeHorizontal.endCoord,
         ],
         // Test 13: carrier horizontal on edge, start middle
         [
-            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
-            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            cloneDeep(carrierEdgeHorizontal.opponentFleet),
             [0, 2],
         ],
     ])("efficiently sink ship", (opponentBoard, opponentFleet, firstShot) => {
