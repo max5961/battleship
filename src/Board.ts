@@ -1,3 +1,5 @@
+import { positiveSortShip } from "./sortShipArray";
+
 export interface Ship {
     coords: Array<Array<number>>;
     direction: Array<number>;
@@ -21,23 +23,25 @@ export class Fleet {
     }
 
     addShip(ship: Array<Array<number>>): void {
-        switch (ship.length) {
+        const positiveSortedShip = positiveSortShip(ship);
+
+        switch (positiveSortedShip.length) {
             case 5:
-                this.carriers.push(ship);
+                this.carriers.push(positiveSortedShip);
                 break;
             case 4:
-                this.battleships.push(ship);
+                this.battleships.push(positiveSortedShip);
                 break;
             case 3:
-                this.submarines.push(ship);
+                this.submarines.push(positiveSortedShip);
                 break;
             case 2:
-                this.destroyers.push(ship);
+                this.destroyers.push(positiveSortedShip);
                 break;
             default:
-                this.invalid.push(ship);
+                this.invalid.push(positiveSortedShip);
         }
-        this.mappedFleet.push(ship);
+        this.mappedFleet.push(positiveSortedShip);
     }
 
     clearFleet(): void {
@@ -101,7 +105,7 @@ export class Board {
                             return false;
                         } else {
                             const ship = this.mapShip(x, y, takenSpaces);
-                            this.fleet.addShip(ship.coords);
+                            this.fleet.addShip(ship);
                             this.mapInvalidSpaces(ship, invalidSpaces);
                         }
                     }
@@ -112,11 +116,35 @@ export class Board {
         return this.fleet.fleetIsValid();
     }
 
-    mapInvalidSpaces(ship: Ship, invalidSpaces: Set<string>): void {
+    getDirection(ship: Array<Array<number>>): Array<number> | null {
+        const directions = [
+            [0, 1],
+            [0, -1],
+            [1, 0],
+            [-1, 0],
+        ];
+        const [fx, fy] = ship[0];
+        while (directions.length) {
+            const [dx, dy] = directions.shift()!;
+            if (fx + dx === ship[1][0] && fy + dy === ship[1][1]) {
+                return [dx, dy];
+            }
+        }
+        return null;
+    }
+
+    mapInvalidSpaces(
+        ship: Array<Array<number>>,
+        invalidSpaces: Set<string>,
+    ): void {
         const invalidCoords: Array<Array<number>> = [];
-        const [dx, dy] = ship.direction;
-        const [fx, fy] = ship.coords[0];
-        const [lx, ly] = ship.coords[ship.coords.length - 1];
+        const direction: Array<number> | null = this.getDirection(ship);
+        if (!direction) {
+            throw new Error("No direction found");
+        }
+        const [dx, dy] = direction;
+        const [fx, fy] = ship[0];
+        const [lx, ly] = ship[ship.length - 1];
         const vertical: boolean = dx !== 0;
         if (vertical) {
             invalidCoords.push([fx - dx, fy - 1]);
@@ -134,8 +162,8 @@ export class Board {
             invalidCoords.push([lx + 1, ly + dy]);
         }
 
-        for (let i = 0; i < ship.coords.length; i++) {
-            const [x, y] = ship.coords[i];
+        for (let i = 0; i < ship.length; i++) {
+            const [x, y] = ship[i];
             if (vertical) {
                 invalidCoords.push([x, y + 1]);
                 invalidCoords.push([x, y - 1]);
@@ -150,7 +178,11 @@ export class Board {
         }
     }
 
-    mapShip(x: number, y: number, takenSpaces: Set<string>): Ship {
+    mapShip(
+        x: number,
+        y: number,
+        takenSpaces: Set<string>,
+    ): Array<Array<number>> {
         const directions: Array<Array<number>> = [
             [1, 0],
             [-1, 0],
@@ -166,15 +198,12 @@ export class Board {
                 pathDir = [dx, dy];
             }
         }
-        const ship: Ship = {
-            coords: [],
-            direction: pathDir,
-        };
+        const ship: Array<Array<number>> = [];
         const [dx, dy] = pathDir;
         let mappingShip = true;
         do {
             if (this.board[x] && this.board[x][y] === 1) {
-                ship.coords.push([x, y]);
+                ship.push([x, y]);
                 takenSpaces.add(this.coordToString(x, y));
                 x += dx;
                 y += dy;
@@ -320,11 +349,7 @@ export class Board {
                         for (const coord of ship) {
                             takenSpaces.add(coord.toString());
                         }
-                        this.mapInvalidSpaces(
-                            { coords: ship, direction: [dx, dy] },
-                            invalidSpaces,
-                        );
-
+                        this.mapInvalidSpaces(ship, invalidSpaces);
                         return ship;
                     }
                 }

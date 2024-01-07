@@ -165,13 +165,11 @@ describe("ComputerChooser.takeTurn() - first shot is on target", () => {
         let shots: number = 1;
         for (let i = 0; i < 10; i++) {
             cpu.takeTurn();
-            console.log(cpu.currentDirection);
             shots++;
             const shipSunk = cpu.currentTargetShipIsSunk();
             if (shipSunk) break;
         }
         const efficientlySankShip = shots <= 8 && shots >= 5;
-        console.log(shots);
         expect(efficientlySankShip).toBe(true);
     });
 });

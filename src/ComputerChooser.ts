@@ -74,8 +74,8 @@ export class ComputerChooser {
         ];
     }
 
-    // use the mapInvalidCoords method from the Board class
-    mapInvalidCoords(): void {
+    // use the mapInvalidSpaces method from the Board class
+    mapInvalidSpaces(): void {
         if (!this.currentDirection) {
             throw new Error("currentDirection property is null");
         }
@@ -86,10 +86,7 @@ export class ComputerChooser {
         } else {
             positiveXOrYDirection = [0, 1];
         }
-        const ship: Ship = {
-            coords: positiveSortShip(this.currentTargetShip),
-            direction: positiveXOrYDirection,
-        };
+        const ship = positiveSortShip(this.currentTargetShip);
         const board = new Board();
         board.mapInvalidSpaces(ship, this.invalidCoords);
     }
@@ -161,7 +158,7 @@ export class ComputerChooser {
 
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
-            this.mapInvalidCoords();
+            this.mapInvalidSpaces();
             this.resetData();
         }
 
