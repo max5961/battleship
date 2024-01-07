@@ -1,5 +1,6 @@
-import { negativeSortShip, positiveSortShip } from "../sortShipArray";
+import { positiveSortShip, negativeSortShip } from "../sortShipArray";
 
+// helper functions for ComputerChooser class
 describe("positiveSortShip()", () => {
     test("ship is sorted in ascending order based on 0th index", () => {
         const array = [

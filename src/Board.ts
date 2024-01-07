@@ -1,4 +1,4 @@
-interface Ship {
+export interface Ship {
     coords: Array<Array<number>>;
     direction: Array<number>;
 }
@@ -9,7 +9,7 @@ export class Fleet {
     submarines: Array<Array<Array<number>>>;
     destroyers: Array<Array<Array<number>>>;
     invalid: Array<Array<Array<number>>>;
-    mappedFleet: Array<Array<number>>;
+    mappedFleet: Array<Array<Array<number>>>;
 
     constructor() {
         this.carriers = []; // ship length 5, expected 1
@@ -37,7 +37,7 @@ export class Fleet {
             default:
                 this.invalid.push(ship);
         }
-        ship.forEach((coord) => this.mappedFleet.push(coord));
+        this.mappedFleet.push(ship);
     }
 
     clearFleet(): void {
