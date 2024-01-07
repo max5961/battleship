@@ -214,31 +214,57 @@ export class Board {
         while (ships.length) {
             const shipLength = ships.shift()!;
 
+            // if a valid ship cannot be created in under 10 tries,
+            // assume that the current fleet doesn't have room
+            // no ship will be added and the boardIsValid method will invalidate the board
             let tries = 0;
-            let [x, y] = getRandomCoord();
-            while (
-                takenSpaces.has(this.coordToString(x, y)) ||
-                invalidSpaces.has(this.coordToString(x, y))
-            ) {
-                [x, y] = getRandomCoord();
-                tries++;
-                if (tries > 10) break;
-            }
-
-            let placementFailures = 0;
-            let ship: Array<Array<number>> | null = null;
-            while (!ship && placementFailures < 5) {
-                ship = this.createShip(
-                    shipLength,
-                    [x, y],
-                    takenSpaces,
-                    invalidSpaces,
-                );
-                if (!ship) {
+            let shipCreated = false;
+            while (!shipCreated && tries < 10) {
+                // get a valid randomCoord
+                let [x, y] = getRandomCoord();
+                let randomCoordAttemps: number = 0;
+                while (
+                    takenSpaces.has(this.coordToString(x, y)) ||
+                    invalidSpaces.has(this.coordToString(x, y))
+                ) {
                     [x, y] = getRandomCoord();
-                    placementFailures++;
+                    randomCoordAttemps++;
+                    if (randomCoordAttemps > 10) {
+                        // assume that no valid spaces are available
+                        // this happens if not enough previous ships are touching
+                        // the board edge
+                        // skip creating the ship.  boardIsValid will invalidate the board
+                        break;
+                    }
+                }
+
+                // try to create a ship with the new coord
+                let placementFailures = 0;
+                let ship: Array<Array<number>> | null = null;
+                while (!ship && placementFailures < 5) {
+                    ship = this.createShip(
+                        shipLength,
+                        [x, y],
+                        takenSpaces,
+                        invalidSpaces,
+                    );
+
+                    // unsuccessfull ship creation
+                    if (!ship) {
+                        [x, y] = getRandomCoord();
+                        placementFailures++;
+                        // successfully made ship, add it to the fleet
+                    } else {
+                        mappedFleet.push(ship);
+                    }
+                }
+                // if a ship was not created try again
+                // if a ship was created, break out of the while loop and create
+                // the next ship in the Q
+                if (!ship) {
+                    tries++;
                 } else {
-                    mappedFleet.push(ship);
+                    shipCreated = true;
                 }
             }
         }
