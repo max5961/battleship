@@ -1,9 +1,6 @@
 import _ from "lodash";
-import { Board } from "../Board";
 import { ComputerChooser } from "../ComputerChooser";
-// ***including the first shot - carriers must be destroyed in:
-//  // first hit is an start/end square: shots <= 8 && shots >=5
-//  // first hit is in the middle: shots <=7 && shots >= 5
+// ***including the first shot on target, carriers must be destroyed in: shots <= 8 && shots >=5
 interface TestEfficientSink {
     opponentBoard: Array<Array<number>>;
     opponentFleet: Array<Array<Array<number>>>;
