@@ -1,103 +1,142 @@
+import _ from "lodash";
 import { Board } from "../Board";
 import { ComputerChooser } from "../ComputerChooser";
 // ***including the first shot - carriers must be destroyed in:
 //  // first hit is an start/end square: shots <= 8 && shots >=5
 //  // first hit is in the middle: shots <=7 && shots >= 5
-const carrierHorizontal = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-];
-const carrierVertical = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-];
+interface TestEfficientSink {
+    opponentBoard: Array<Array<number>>;
+    opponentFleet: Array<Array<Array<number>>>;
+    startCoord: Array<number>;
+    endCoord: Array<number>;
+}
+const carrierHorizontal: TestEfficientSink = {
+    opponentBoard: [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    opponentFleet: [
+        [ [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], ],
+    ], // prettier-ignore
+    startCoord: [1, 1],
+    endCoord: [1, 5],
+};
+const carrierVertical = {
+    opponentBoard: [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    opponentFleet: [
+        [ [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], ],
+    ], // prettier-ignore
+    startCoord: [1, 1],
+    endCoord: [5, 1],
+};
 
 describe("ComputerChooser.currentTargetShipIsSunk", () => {
     test("Recognize when a ship is sunk", () => {
-        const opponentBoard = new Board(carrierHorizontal);
         const cpu = new ComputerChooser();
-        cpu.currentTargetShip = [
-            [1, 1],
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 5],
-        ];
-        cpu.opponentBoard = opponentBoard.board;
-        cpu.opponentFleet = [
-            [
-                [1, 1],
-                [1, 2],
-                [1, 3],
-                [1, 4],
-                [1, 5],
-            ],
-            [
-                [3, 1],
-                [3, 2],
-                [3, 3],
-            ],
-        ];
+        cpu.currentTargetShip = [ [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], ]; // prettier-ignore
+        cpu.opponentBoard = carrierHorizontal.opponentBoard;
+        cpu.opponentFleet = carrierHorizontal.opponentFleet;
         const shipSunk: boolean = cpu.currentTargetShipIsSunk();
         expect(shipSunk).toBe(true);
     });
 });
 
 describe("ComputerChooser.takeTurn() - first shot is on target", () => {
-    test("Sink horizontal carrier (5 sqs): shots <= 8 && shots >= 5", () => {
-        const opponentBoard = new Board(carrierHorizontal);
-        const firstShotCoord: Array<number> = [1, 1];
-
+    test.each([
+        // Test 1: carrier horizontal, start at beginning of ship
+        [
+            _.cloneDeep(carrierHorizontal.opponentBoard),
+            _.cloneDeep(carrierHorizontal.opponentFleet),
+            carrierHorizontal.startCoord,
+        ],
+        // Test 2: carrier vertical, start at beginning of ship
+        [
+            _.cloneDeep(carrierVertical.opponentBoard),
+            _.cloneDeep(carrierVertical.opponentFleet),
+            carrierVertical.startCoord,
+        ],
+        // Test 3: carrier horizontal, start at end of ship
+        [
+            _.cloneDeep(carrierHorizontal.opponentBoard),
+            _.cloneDeep(carrierHorizontal.opponentFleet),
+            carrierHorizontal.endCoord,
+        ],
+        // Test 4: carrier vertical, start at end of ship
+        [
+            _.cloneDeep(carrierVertical.opponentBoard),
+            _.cloneDeep(carrierVertical.opponentFleet),
+            carrierVertical.endCoord,
+        ],
+        // Test 5: carrier horizontal, start in middle of ship
+        [
+            _.cloneDeep(carrierHorizontal.opponentBoard),
+            _.cloneDeep(carrierHorizontal.opponentFleet),
+            [1, 3],
+        ],
+        // Test 6: carrier horizontal, start in middle of ship
+        [
+            _.cloneDeep(carrierHorizontal.opponentBoard),
+            _.cloneDeep(carrierHorizontal.opponentFleet),
+            [1, 4],
+        ],
+        // Test 7: carrier horizontal, start in middle of ship
+        [
+            _.cloneDeep(carrierHorizontal.opponentBoard),
+            _.cloneDeep(carrierHorizontal.opponentFleet),
+            [1, 2],
+        ],
+        // Test 8: carrier vertical, start in middle of ship
+        [
+            _.cloneDeep(carrierVertical.opponentBoard),
+            _.cloneDeep(carrierVertical.opponentFleet),
+            [3, 1],
+        ],
+        // Test 9: carrier vertical, start in middle of ship
+        [
+            _.cloneDeep(carrierVertical.opponentBoard),
+            _.cloneDeep(carrierVertical.opponentFleet),
+            [4, 1],
+        ],
+        // Test 10: carrier vertical, start in middle of ship
+        [
+            _.cloneDeep(carrierVertical.opponentBoard),
+            _.cloneDeep(carrierVertical.opponentFleet),
+            [2, 1],
+        ],
+    ])("efficiently sink ship", (opponentBoard, opponentFleet, firstShot) => {
         const cpu = new ComputerChooser();
-        cpu.opponentBoard = opponentBoard.board;
-        cpu.opponentFleet = [
-            [
-                [1, 1],
-                [1, 2],
-                [1, 3],
-                [1, 4],
-                [1, 5],
-            ],
-        ];
+        cpu.opponentBoard = opponentBoard;
+        cpu.opponentFleet = opponentFleet;
 
-        cpu.takeShot(firstShotCoord);
+        cpu.takeShot(firstShot);
         let shots: number = 1;
-        for (let i = 1; i < 10; i++) {
+        for (let i = 0; i < 10; i++) {
             cpu.takeTurn();
             shots++;
             const shipSunk = cpu.currentTargetShipIsSunk();
             if (shipSunk) break;
         }
-        const efficientlySankShip: boolean = shots <= 8 && shots >= 5;
+        const efficientlySankShip = shots <= 8 && shots >= 5;
         console.log(shots);
         expect(efficientlySankShip).toBe(true);
     });
-    // test("Sink vertical carrier (5 sqs): shots <=8 && shots >= 5", () => {
-    //     const board = new Board(carrierVertical);
-    //     const firstShotCoord: Array<number> = [1,1];
-    // });
-    // test("Sink horizontal carrier (5 sqs): shots <= 7 && shots >= 5", () => {
-    //     const board = new Board(carrierHorizontal);
-    //     const firstShotCoord: Array<number> = [1,3];
-    // });
-    // test("Sink vertical carrier (5 sqs): shots <=7 && shots >= 5", () => {
-    //     const board = new Board(carrierVertical);
-    //     const firstShotCoord: Array<number> = [3,1];
-    // });
 });

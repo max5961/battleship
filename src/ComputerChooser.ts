@@ -5,7 +5,7 @@ export class ComputerChooser {
     opponentBoard: Array<Array<number>> | null;
     opponentFleet: Array<Array<Array<number>>> | null;
     lastHitCoord: Array<number> | null;
-    nextCoord: Array<number> | null;
+    reverseDirection: boolean;
     currentTargetShip: Array<Array<number>>;
     possibleDirections: Array<Array<number>>;
     currentDirection: Array<number> | null;
@@ -16,7 +16,7 @@ export class ComputerChooser {
         this.opponentBoard = null;
         this.opponentFleet = null;
         this.lastHitCoord = null;
-        this.nextCoord = null;
+        this.reverseDirection = false;
         this.currentTargetShip = [];
         this.currentDirection = null;
         this.possibleDirections = this.resetDirections();
@@ -57,7 +57,7 @@ export class ComputerChooser {
 
         // clone primitive types
         next.lastHitCoord = this.lastHitCoord;
-        next.nextCoord = this.nextCoord;
+        next.reverseDirection = this.reverseDirection;
 
         // clone reference types
         next.invalidCoords = new Set(this.invalidCoords);
@@ -79,8 +79,8 @@ export class ComputerChooser {
         return next;
     }
 
-    resetNextCoordData(): void {
-        this.nextCoord = null;
+    resetData(): void {
+        this.reverseDirection = false;
         this.lastHitCoord = null;
         this.currentTargetShip = [];
         this.possibleDirections = this.resetDirections();
@@ -127,7 +127,7 @@ export class ComputerChooser {
         if (!this.opponentFleet) {
             throw new Error("Must set opponentFleet property");
         }
-        const currTarget = this.currentTargetShip;
+        const currTarget = positiveSortShip(this.currentTargetShip);
         for (const ship of this.opponentFleet) {
             if (ship.length === currTarget.length) {
                 let match: boolean = true;
@@ -162,7 +162,8 @@ export class ComputerChooser {
 
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
-            this.resetNextCoordData();
+            // mark invalid coords
+            this.resetData();
         }
 
         if (this.lastHitCoord === null) {
@@ -180,6 +181,8 @@ export class ComputerChooser {
     }
 
     takeShot(coord: Array<number>): void {
+        this.chosenCoords.add(coord.toString());
+
         if (this.shotIsOnTarget(coord)) {
             this.handleShotIsOnTarget(coord);
         } else {
@@ -211,60 +214,43 @@ export class ComputerChooser {
             );
         }
 
-        const [cx, cy] = this.lastHitCoord;
+        let cx: number;
+        let cy: number;
+        // last shot along curr direction was a miss
+        // the direction was reversed, CANNOT derive dx,dy coords from lastHitCoord
+        if (this.reverseDirection) {
+            const [x, y] = this.currentTargetShip[0];
+            cx = x;
+            cy = y;
+            this.reverseDirection = false;
+
+            // else, last shot was a hit, derive the dx,dy coords from lastHitCoord
+        } else {
+            const [x, y] = this.lastHitCoord;
+            cx = x;
+            cy = y;
+        }
         const [dx, dy] = this.currentDirection;
         const coord = [cx + dx, cy + dy];
-        this.takeShot(coord);
 
-        // HANDLE AFTER THE SHOT IS TAKEN
-        // shooting at nextCoord sinks a ship
-        // reset properties to default
-        const shipSunk = this.currentTargetShipIsSunk();
-        if (shipSunk) {
-            return;
-        }
-
-        // shooting at nextCoord is a hit
-        if (this.shotIsOnTarget(coord)) {
-            this.lastHitCoord = coord;
-        }
-
-        // shooting at nextCoord is a miss
-        // get the opposite side of the ship from the currentTargetShip array
+        // if shot with coord produces a miss, reverse direction
         if (!this.shotIsOnTarget(coord)) {
-            // reverse the currentDirection
-            for (let i = 0; i < this.currentDirection.length; i++) {
-                if (this.currentDirection[i] === 1) {
-                    this.currentDirection[i] = -1;
-                }
-                if (this.currentDirection[i] === -1) {
-                    this.currentDirection[i] = 1;
+            for (let i = 0; i < 2; i++) {
+                if (this.currentDirection[i] !== 0) {
+                    if (this.currentDirection[i] === 1) {
+                        this.currentDirection[i] = -1;
+                    } else {
+                        this.currentDirection[i] = 1;
+                    }
                 }
             }
-            // get the orientation of currentDirection
-            // positive: left -> right, up -> down
-            // negative: right -> left, down -> up
-            const positive: boolean =
-                this.currentDirection[0] === 1 ||
-                this.currentDirection[1] === 1;
-
-            // sort the mapped hits from currentTargetShip
-            positive
-                ? (this.currentTargetShip = positiveSortShip(
-                      this.currentTargetShip,
-                  ))
-                : (this.currentTargetShip = negativeSortShip(
-                      this.currentTargetShip,
-                  ));
-
-            // last index of currentTargetShip is nextCoord
-            this.nextCoord =
-                this.currentTargetShip[this.currentTargetShip.length - 1];
+            this.reverseDirection = true;
         }
+        // finally, take the shot
+        this.takeShot(coord);
     }
 
     shootAndSearchForDirection(): void {
-        console.debug("search for direction");
         if (!this.lastHitCoord) {
             throw new Error(
                 "Fn should not have been run: lastHitCoord property is null",
