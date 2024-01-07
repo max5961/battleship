@@ -1,4 +1,4 @@
-import { Board, SHip } from "./Board";
+import { Board, Ship } from "./Board";
 import React from "react";
 import { useState } from "react";
 
