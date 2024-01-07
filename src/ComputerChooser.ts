@@ -1,5 +1,6 @@
 import { Board, Fleet, Ship } from "./Board";
 import { positiveSortShip } from "./sortShipArray";
+import { cloneDeep } from "lodash";
 
 export class ComputerChooser {
     opponentBoard: Array<Array<number>> | null;
@@ -32,19 +33,6 @@ export class ComputerChooser {
         this.opponentFleet = fleet.mappedFleet;
     }
 
-    // use the mapInvalidCoords method from the Board class
-    mapInvalidCoords(): void {
-        if (!this.currentDirection) {
-            throw new Error("currentDirection property is null");
-        }
-        const ship: Ship = {
-            coords: positiveSortShip(this.currentTargetShip),
-            direction: this.currentDirection,
-        };
-        const board = new Board();
-        board.mapInvalidSpaces(ship, this.invalidCoords);
-    }
-
     getClone(): ComputerChooser {
         if (!this.opponentFleet) {
             throw new Error("opponentFleet property is null");
@@ -54,28 +42,19 @@ export class ComputerChooser {
         }
 
         const next = new ComputerChooser();
-
         // clone primitive types
         next.lastHitCoord = this.lastHitCoord;
         next.lastShotMissed = this.lastShotMissed;
-
         // clone reference types
-        next.invalidCoords = new Set(this.invalidCoords);
-        next.chosenCoords = new Set(this.chosenCoords);
-        next.opponentBoard = this.opponentBoard.map((row) => row.slice());
-        next.opponentFleet = this.opponentFleet.map((ship) =>
-            ship.map((coord) => coord.slice()).slice(),
-        );
-        next.possibleDirections = this.possibleDirections.map((direction) =>
-            direction.slice(),
-        );
-        next.currentTargetShip = this.currentTargetShip.map((coord) =>
-            coord.slice(),
-        );
-        next.currentDirection = !this.currentDirection
-            ? this.currentDirection
-            : this.currentDirection.slice();
-
+        next.invalidCoords = cloneDeep(this.invalidCoords);
+        next.chosenCoords = cloneDeep(this.invalidCoords);
+        next.opponentBoard = cloneDeep(this.opponentBoard);
+        next.opponentFleet = cloneDeep(this.opponentFleet);
+        next.possibleDirections = cloneDeep(this.possibleDirections);
+        next.currentTargetShip = cloneDeep(this.currentTargetShip);
+        next.currentDirection = this.currentDirection
+            ? cloneDeep(this.currentDirection)
+            : this.currentDirection;
         return next;
     }
 
@@ -93,6 +72,26 @@ export class ComputerChooser {
             [1, 0],
             [-1, 0],
         ];
+    }
+
+    // use the mapInvalidCoords method from the Board class
+    mapInvalidCoords(): void {
+        if (!this.currentDirection) {
+            throw new Error("currentDirection property is null");
+        }
+
+        let positiveXOrYDirection: Array<number>;
+        if (this.currentDirection[0] !== 0) {
+            positiveXOrYDirection = [1, 0];
+        } else {
+            positiveXOrYDirection = [0, 1];
+        }
+        const ship: Ship = {
+            coords: positiveSortShip(this.currentTargetShip),
+            direction: positiveXOrYDirection,
+        };
+        const board = new Board();
+        board.mapInvalidSpaces(ship, this.invalidCoords);
     }
 
     coordIsValid(coord: Array<number>): boolean {
@@ -125,7 +124,7 @@ export class ComputerChooser {
 
     currentTargetShipIsSunk(): boolean {
         if (!this.opponentFleet) {
-            throw new Error("Must set opponentFleet property");
+            throw new Error("opponentFleet property is null");
         }
         const currTarget = positiveSortShip(this.currentTargetShip);
         for (const ship of this.opponentFleet) {
@@ -162,7 +161,7 @@ export class ComputerChooser {
 
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
-            // mark invalid coords
+            this.mapInvalidCoords();
             this.resetData();
         }
 
@@ -204,7 +203,7 @@ export class ComputerChooser {
             throw new Error("currentDirection property is null");
         }
         if (!this.lastHitCoord) {
-            throw new Error("lastHitCoord is null");
+            throw new Error("lastHitCoord property is null");
         }
 
         let cx: number;
@@ -226,7 +225,7 @@ export class ComputerChooser {
         const [dx, dy] = this.currentDirection;
         const coord = [cx + dx, cy + dy];
 
-        // reverse direction if shot with coord is a miss
+        // shot with coord is a miss, reverse currentDirection
         if (!this.shotIsOnTarget(coord)) {
             for (let i = 0; i < 2; i++) {
                 if (this.currentDirection[i] !== 0) {
@@ -237,16 +236,23 @@ export class ComputerChooser {
                     }
                 }
             }
+
+            // if the coord is in a spot that cannot contain a ship, skip taking
+            // the illogical shot and immediately take the next shot in the reverse direction
+            if (this.coordIsValid(coord)) {
+                this.lastShotMissed = true;
+                this.shootAlongCurrentDirection();
+                return;
+            }
         }
+
         // finally, take the shot
         this.takeShot(coord);
     }
 
     shootAndSearchForDirection(): void {
         if (!this.lastHitCoord) {
-            throw new Error(
-                "Fn should not have been run: lastHitCoord property is null",
-            );
+            throw new Error("lastHitCoord property is null");
         }
 
         const getRandomDirectionIndex = (): number =>
@@ -263,7 +269,7 @@ export class ComputerChooser {
             const nx = lx + dx;
             const ny = ly + dy;
 
-            // ONLY check if the coordinate is valid // NOT if its also on target
+            // ONLY check if the coordinate is valid.  NOT if its also on target
             // the computer isn't supposed to know which direction to try to shoot
             // until the x or y direction has been found
             if (this.coordIsValid([nx, ny])) {

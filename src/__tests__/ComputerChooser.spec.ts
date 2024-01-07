@@ -26,7 +26,7 @@ const carrierHorizontal: TestEfficientSink = {
     startCoord: [1, 1],
     endCoord: [1, 5],
 };
-const carrierVertical = {
+const carrierVertical: TestEfficientSink = {
     opponentBoard: [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -44,6 +44,25 @@ const carrierVertical = {
     ], // prettier-ignore
     startCoord: [1, 1],
     endCoord: [5, 1],
+};
+const carrierEdgeHorizontal: TestEfficientSink = {
+    opponentBoard: [
+        [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    opponentFleet: [
+        [ [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], ],
+    ], // prettier-ignore
+    startCoord: [0, 0],
+    endCoord: [0, 4],
 };
 
 describe("ComputerChooser.currentTargetShipIsSunk", () => {
@@ -119,6 +138,24 @@ describe("ComputerChooser.takeTurn() - first shot is on target", () => {
             _.cloneDeep(carrierVertical.opponentFleet),
             [2, 1],
         ],
+        // Test 11: carrier horizontal on edge, start beginning
+        [
+            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            carrierEdgeHorizontal.startCoord,
+        ],
+        // Test 12: carrier horizontal on edge, start end
+        [
+            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            carrierEdgeHorizontal.endCoord,
+        ],
+        // Test 13: carrier horizontal on edge, start middle
+        [
+            _.cloneDeep(carrierEdgeHorizontal.opponentBoard),
+            _.cloneDeep(carrierEdgeHorizontal.opponentFleet),
+            [0, 2],
+        ],
     ])("efficiently sink ship", (opponentBoard, opponentFleet, firstShot) => {
         const cpu = new ComputerChooser();
         cpu.opponentBoard = opponentBoard;
@@ -128,6 +165,7 @@ describe("ComputerChooser.takeTurn() - first shot is on target", () => {
         let shots: number = 1;
         for (let i = 0; i < 10; i++) {
             cpu.takeTurn();
+            console.log(cpu.currentDirection);
             shots++;
             const shipSunk = cpu.currentTargetShipIsSunk();
             if (shipSunk) break;
