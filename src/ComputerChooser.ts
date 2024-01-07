@@ -100,8 +100,8 @@ export class ComputerChooser {
         return (
             !this.invalidCoords.has(coord.toString()) &&
             !this.chosenCoords.has(coord.toString()) &&
-            x > 0 &&
-            y > 0 &&
+            x >= 0 &&
+            y >= 0 &&
             x < 10 &&
             y < 10
         );
@@ -177,7 +177,6 @@ export class ComputerChooser {
         this.markHit(coord);
         this.lastHitCoord = coord;
         this.currentTargetShip.push(coord);
-        console.debug(this.currentTargetShip);
     }
 
     takeShot(coord: Array<number>): void {
@@ -214,8 +213,8 @@ export class ComputerChooser {
 
         const [cx, cy] = this.lastHitCoord;
         const [dx, dy] = this.currentDirection;
-        const nextCoord = [cx + dx, cy + dy];
-        this.takeShot(nextCoord);
+        const coord = [cx + dx, cy + dy];
+        this.takeShot(coord);
 
         // HANDLE AFTER THE SHOT IS TAKEN
         // shooting at nextCoord sinks a ship
@@ -226,13 +225,13 @@ export class ComputerChooser {
         }
 
         // shooting at nextCoord is a hit
-        if (this.shotIsOnTarget(nextCoord)) {
-            this.lastHitCoord = nextCoord;
+        if (this.shotIsOnTarget(coord)) {
+            this.lastHitCoord = coord;
         }
 
         // shooting at nextCoord is a miss
         // get the opposite side of the ship from the currentTargetShip array
-        if (!this.shotIsOnTarget(nextCoord)) {
+        if (!this.shotIsOnTarget(coord)) {
             // reverse the currentDirection
             for (let i = 0; i < this.currentDirection.length; i++) {
                 if (this.currentDirection[i] === 1) {
@@ -265,6 +264,7 @@ export class ComputerChooser {
     }
 
     shootAndSearchForDirection(): void {
+        console.debug("search for direction");
         if (!this.lastHitCoord) {
             throw new Error(
                 "Fn should not have been run: lastHitCoord property is null",
