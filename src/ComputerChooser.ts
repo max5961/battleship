@@ -1,11 +1,11 @@
 import { Board, Fleet, Ship } from "./Board";
-import { negativeSortShip, positiveSortShip } from "./sortShipArray";
+import { positiveSortShip } from "./sortShipArray";
 
 export class ComputerChooser {
     opponentBoard: Array<Array<number>> | null;
     opponentFleet: Array<Array<Array<number>>> | null;
     lastHitCoord: Array<number> | null;
-    reverseDirection: boolean;
+    lastShotMissed: boolean;
     currentTargetShip: Array<Array<number>>;
     possibleDirections: Array<Array<number>>;
     currentDirection: Array<number> | null;
@@ -16,7 +16,7 @@ export class ComputerChooser {
         this.opponentBoard = null;
         this.opponentFleet = null;
         this.lastHitCoord = null;
-        this.reverseDirection = false;
+        this.lastShotMissed = true;
         this.currentTargetShip = [];
         this.currentDirection = null;
         this.possibleDirections = this.resetDirections();
@@ -57,7 +57,7 @@ export class ComputerChooser {
 
         // clone primitive types
         next.lastHitCoord = this.lastHitCoord;
-        next.reverseDirection = this.reverseDirection;
+        next.lastShotMissed = this.lastShotMissed;
 
         // clone reference types
         next.invalidCoords = new Set(this.invalidCoords);
@@ -80,7 +80,7 @@ export class ComputerChooser {
     }
 
     resetData(): void {
-        this.reverseDirection = false;
+        this.lastShotMissed = true;
         this.lastHitCoord = null;
         this.currentTargetShip = [];
         this.possibleDirections = this.resetDirections();
@@ -166,31 +166,29 @@ export class ComputerChooser {
             this.resetData();
         }
 
-        if (this.lastHitCoord === null) {
+        // last shot was a hit, target area is now focused
+        if (this.lastHitCoord) {
+            this.takeFocusedShot();
+        } else {
             const coord = this.getRandomCoord();
             this.takeShot(coord);
-        } else {
-            this.takeFocusedShot();
         }
-    }
-
-    handleShotIsOnTarget(coord: Array<number>): void {
-        this.markHit(coord);
-        this.lastHitCoord = coord;
-        this.currentTargetShip.push(coord);
     }
 
     takeShot(coord: Array<number>): void {
         this.chosenCoords.add(coord.toString());
 
         if (this.shotIsOnTarget(coord)) {
-            this.handleShotIsOnTarget(coord);
+            this.markHit(coord);
+            this.lastHitCoord = coord;
+            this.currentTargetShip.push(coord);
+            this.lastShotMissed = false;
         } else {
             this.markMiss(coord);
+            this.lastShotMissed = true;
         }
     }
 
-    // target area HAS been found
     takeFocusedShot(): void {
         // currentDirection is already known
         if (this.currentDirection) {
@@ -201,30 +199,25 @@ export class ComputerChooser {
         this.shootAndSearchForDirection();
     }
 
-    // if there is a current x or y direction to search along
     shootAlongCurrentDirection(): void {
         if (!this.currentDirection) {
-            throw new Error(
-                "Fn should not have been run: currentDirection property is null",
-            );
+            throw new Error("currentDirection property is null");
         }
         if (!this.lastHitCoord) {
-            throw new Error(
-                "Fn should not have been run: lastHitCoord is null",
-            );
+            throw new Error("lastHitCoord is null");
         }
 
         let cx: number;
         let cy: number;
-        // last shot along curr direction was a miss
-        // the direction was reversed, CANNOT derive dx,dy coords from lastHitCoord
-        if (this.reverseDirection) {
+        // last shot was a miss (reached beyond the ends of the ship), current direction was reversed
+        // derive dx, dy from the first hit
+        if (this.lastShotMissed) {
             const [x, y] = this.currentTargetShip[0];
             cx = x;
             cy = y;
-            this.reverseDirection = false;
+            this.lastShotMissed = false;
 
-            // else, last shot was a hit, derive the dx,dy coords from lastHitCoord
+            // else keep going along current direction
         } else {
             const [x, y] = this.lastHitCoord;
             cx = x;
@@ -233,7 +226,7 @@ export class ComputerChooser {
         const [dx, dy] = this.currentDirection;
         const coord = [cx + dx, cy + dy];
 
-        // if shot with coord produces a miss, reverse direction
+        // reverse direction if shot with coord is a miss
         if (!this.shotIsOnTarget(coord)) {
             for (let i = 0; i < 2; i++) {
                 if (this.currentDirection[i] !== 0) {
@@ -244,7 +237,6 @@ export class ComputerChooser {
                     }
                 }
             }
-            this.reverseDirection = true;
         }
         // finally, take the shot
         this.takeShot(coord);
@@ -263,8 +255,7 @@ export class ComputerChooser {
         const [lx, ly] = this.lastHitCoord!;
         const nextCoord: Array<number> = [];
 
-        // take the possibleDirections property and splice at a random index until a coord
-        // is found that is not part of the taken or invalid Sets
+        // take the possibleDirections property and splice at random until a valid coord is found
         while (!nextCoord.length) {
             const index = getRandomDirectionIndex();
             const [dx, dy] = this.possibleDirections[index];
