@@ -1,4 +1,4 @@
-import { Board, Fleet, Ship } from "./Board";
+import { Board, Fleet } from "./Board";
 import { positiveSortShip } from "./sortShipArray";
 import { cloneDeep } from "lodash";
 
@@ -237,7 +237,6 @@ export class ComputerChooser {
             // if the coord is in a spot that cannot contain a ship, skip taking
             // the illogical shot and immediately take the next shot in the reverse direction
             if (!this.coordIsValid(coord)) {
-                console.log("triggered when I should not be triggered");
                 this.lastShotMissed = true;
                 this.shootAlongCurrentDirection();
                 return;
