@@ -64,79 +64,16 @@ export class Fleet {
     }
 }
 
-export class Board {
-    board: Array<Array<number>>;
-    fleet: Fleet;
+export class BoardState {
+    invalidCoords: Set<string>;
+    takenCoords: Set<string>;
 
-    constructor(
-        board: Array<Array<number>> = new Array(10)
-            .fill(null)
-            .map(() => new Array(10).fill(0)),
-    ) {
-        this.board = board;
-        this.fleet = new Fleet();
+    constructor() {
+        this.invalidCoords = new Set();
+        this.takenCoords = new Set();
     }
 
-    // helper function
-    coordToString(x: number, y: number): string {
-        return [x, y].toString();
-    }
-
-    resetBoard(): void {
-        this.board = new Array(10).fill(null).map(() => new Array(10).fill(0));
-        this.fleet.clearFleet();
-    }
-
-    boardIsValid(): boolean {
-        // bozo code // board should be validated other than checking fleet instance
-        this.fleet.clearFleet();
-
-        const takenSpaces: Set<string> = new Set();
-        const invalidSpaces: Set<string> = new Set();
-
-        for (let x = 0; x < 10; x++) {
-            for (let y = 0; y < 10; y++) {
-                // chosen coords value is 1 // empty coords value is 0
-                if (this.board[x][y] === 1) {
-                    const stringCoord: string = [x, y].toString();
-                    // coord has not yet been mapped to a ship
-                    if (!takenSpaces.has(stringCoord)) {
-                        if (invalidSpaces.has(stringCoord)) {
-                            return false;
-                        } else {
-                            const ship = this.mapShip(x, y, takenSpaces);
-                            this.fleet.addShip(ship);
-                            this.mapInvalidSpaces(ship, invalidSpaces);
-                        }
-                    }
-                }
-            }
-        }
-
-        return this.fleet.fleetIsValid();
-    }
-
-    getDirection(ship: Array<Array<number>>): Array<number> | null {
-        const directions = [
-            [0, 1],
-            [0, -1],
-            [1, 0],
-            [-1, 0],
-        ];
-        const [fx, fy] = ship[0];
-        while (directions.length) {
-            const [dx, dy] = directions.shift()!;
-            if (fx + dx === ship[1][0] && fy + dy === ship[1][1]) {
-                return [dx, dy];
-            }
-        }
-        return null;
-    }
-
-    mapInvalidSpaces(
-        ship: Array<Array<number>>,
-        invalidSpaces: Set<string>,
-    ): void {
+    mapInvalidSpaces(ship: Array<Array<number>>): void {
         const invalidCoords: Array<Array<number>> = [];
         const direction: Array<number> | null = this.getDirection(ship);
         if (!direction) {
@@ -176,6 +113,85 @@ export class Board {
         for (const coord of invalidCoords) {
             invalidSpaces.add(this.coordToString(coord[0], coord[1]));
         }
+    }
+}
+
+export class BoardSetupValidator {
+    board: Array<Array<number>>;
+    fleet: Fleet;
+
+    constructor(board: Array<Array<number>>) {
+        this.board = board;
+        this.fleet = new Fleet();
+    }
+
+    boardIsValid(): boolean {
+        this.fleet.clearFleet();
+
+        const takenSpaces: Set<string> = new Set();
+        const invalidSpaces: Set<string> = new Set();
+
+        for (let x = 0; x < 10; x++) {
+            for (let y = 0; y < 10; y++) {
+                // chosen coords value is 1 // empty coords value is 0
+                if (this.board[x][y] === 1) {
+                    const stringCoord: string = [x, y].toString();
+                    // coord has not yet been mapped to a ship
+                    if (!takenSpaces.has(stringCoord)) {
+                        if (invalidSpaces.has(stringCoord)) {
+                            return false;
+                        } else {
+                            const ship = this.mapShip(x, y, takenSpaces);
+                            this.fleet.addShip(ship);
+                            this.mapInvalidSpaces(ship, invalidSpaces);
+                        }
+                    }
+                }
+            }
+        }
+
+        return this.fleet.fleetIsValid();
+    }
+}
+
+export class Board {
+    board: Array<Array<number>>;
+    fleet: Fleet;
+
+    constructor(
+        board: Array<Array<number>> = new Array(10)
+            .fill(null)
+            .map(() => new Array(10).fill(0)),
+    ) {
+        this.board = board;
+        this.fleet = new Fleet();
+    }
+
+    // helper function
+    coordToString(x: number, y: number): string {
+        return [x, y].toString();
+    }
+
+    resetBoard(): void {
+        this.board = new Array(10).fill(null).map(() => new Array(10).fill(0));
+        this.fleet.clearFleet();
+    }
+
+    getDirection(ship: Array<Array<number>>): Array<number> | null {
+        const directions = [
+            [0, 1],
+            [0, -1],
+            [1, 0],
+            [-1, 0],
+        ];
+        const [fx, fy] = ship[0];
+        while (directions.length) {
+            const [dx, dy] = directions.shift()!;
+            if (fx + dx === ship[1][0] && fy + dy === ship[1][1]) {
+                return [dx, dy];
+            }
+        }
+        return null;
     }
 
     mapShip(
