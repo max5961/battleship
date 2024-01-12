@@ -1,4 +1,4 @@
-import { positiveSortShip } from "../sortShipArray";
+import { positiveSortShip } from "./sortShipArray";
 
 export class CoordUtils {
     static getRandomCoord(): Array<number> {
