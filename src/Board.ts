@@ -1,9 +1,14 @@
 import { positiveSortShip } from "./sortShipArray";
-
-export interface Ship {
+export class Ship {
     coords: Array<Array<number>>;
-    direction: Array<number>;
+    direction: Array<number> | null;
+
+    constructor() {
+        this.coords = [];
+        this.direction = null;
+    }
 }
+
 export class Fleet {
     // carriers/battleships/submarines/destroyers = [[[1,2],[2,2]]]
     carriers: Array<Array<Array<number>>>;
@@ -64,7 +69,7 @@ export class Fleet {
     }
 }
 
-export class BoardState {
+export class BoardCoordState {
     invalidCoords: Set<string>;
     takenCoords: Set<string>;
 
@@ -73,9 +78,11 @@ export class BoardState {
         this.takenCoords = new Set();
     }
 
-    mapInvalidSpaces(ship: Array<Array<number>>): void {
+    addInvalidCoords(ship: Array<Array<number>>): void {
         const invalidCoords: Array<Array<number>> = [];
-        const direction: Array<number> | null = this.getDirection(ship);
+        // need to fix this
+        const direction: Array<number> | null =
+            DirectionUtils.getShipDirection(ship);
         if (!direction) {
             throw new Error("No direction found");
         }
@@ -111,25 +118,30 @@ export class BoardState {
         }
 
         for (const coord of invalidCoords) {
-            invalidSpaces.add(this.coordToString(coord[0], coord[1]));
+            this.invalidCoords.add(coord.toString());
+        }
+    }
+
+    addTakenCoords(ship: Array<Array<number>>): void {
+        for (const coord of ship) {
+            this.takenCoords.add(coord.toString());
         }
     }
 }
 
 export class BoardSetupValidator {
     board: Array<Array<number>>;
+    boardState: BoardCoordState;
     fleet: Fleet;
 
     constructor(board: Array<Array<number>>) {
         this.board = board;
+        this.boardState = new BoardCoordState();
         this.fleet = new Fleet();
     }
 
     boardIsValid(): boolean {
         this.fleet.clearFleet();
-
-        const takenSpaces: Set<string> = new Set();
-        const invalidSpaces: Set<string> = new Set();
 
         for (let x = 0; x < 10; x++) {
             for (let y = 0; y < 10; y++) {
@@ -137,13 +149,18 @@ export class BoardSetupValidator {
                 if (this.board[x][y] === 1) {
                     const stringCoord: string = [x, y].toString();
                     // coord has not yet been mapped to a ship
-                    if (!takenSpaces.has(stringCoord)) {
-                        if (invalidSpaces.has(stringCoord)) {
+                    if (!this.boardState.takenCoords.has(stringCoord)) {
+                        if (this.boardState.invalidCoords.has(stringCoord)) {
                             return false;
                         } else {
-                            const ship = this.mapShip(x, y, takenSpaces);
-                            this.fleet.addShip(ship);
-                            this.mapInvalidSpaces(ship, invalidSpaces);
+                            // const ship = this.mapShip(x, y, takenSpaces);
+                            // this.fleet.addShip(ship);
+                            // this.boardState.mapInvalidSpaces(ship);
+                            //
+                            // REFACTOR PSUEDOCODE
+                            // ship = this.mapper.findShip([x,y]);
+                            // this.fleet.addShip(ship);
+                            // this.boardState.mapTakenSpaces(ship);
                         }
                     }
                 }
@@ -151,6 +168,10 @@ export class BoardSetupValidator {
         }
 
         return this.fleet.fleetIsValid();
+    }
+
+    findAndReturnShip(coord: Array<number>): Array<Array<number>> {
+        //
     }
 }
 
