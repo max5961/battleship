@@ -22,7 +22,7 @@ export function getPositiveSortShip(
     return array;
 }
 
-export function negativeSortShip(
+export function getNegativeSortShip(
     inputArray: Array<Array<number>>,
 ): Array<Array<number>> {
     const array = inputArray.slice();

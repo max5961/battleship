@@ -295,7 +295,7 @@ export class GridState {
         return null;
     }
 
-    getRandomValidCoord(): Array<numnber> {
+    getRandomValidCoord(): Array<number> {
         let coord: Array<number> = CoordUtils.getRandomCoord();
         while (!this.coordIsValid(coord)) {
             coord = CoordUtils.getRandomCoord();
@@ -526,6 +526,7 @@ class ComputerChooser {
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
             this.gridState.addInvalidCoords(this.currentTargetShip);
+            this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
             this.resetData();
         }
 
@@ -617,5 +618,11 @@ class ComputerChooser {
         }
         // finally, take the shot
         this.takeShot(nextCoord);
+    }
+}
+
+export class UserChooser {
+    constructor() {
+        //
     }
 }
