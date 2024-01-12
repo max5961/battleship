@@ -1,4 +1,4 @@
-import { positiveSortShip } from "./sortShipArray";
+import { getPositiveSortShip } from "./sortShipArray";
 export class Ship {
     coords: Array<Array<number>>;
     direction: Array<number> | null;
@@ -28,7 +28,7 @@ export class Fleet {
     }
 
     addShip(ship: Array<Array<number>>): void {
-        const positiveSortedShip = positiveSortShip(ship);
+        const positiveSortedShip = getPositiveSortShip(ship);
 
         switch (positiveSortedShip.length) {
             case 5:

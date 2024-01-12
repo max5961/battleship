@@ -1,7 +1,7 @@
-import { positiveSortShip, negativeSortShip } from "../sortShipArray";
+import { getPositiveSortShip, negativeSortShip } from "../sortShipArray";
 
 // helper functions for ComputerChooser class
-describe("positiveSortShip()", () => {
+describe("getPositiveSortShip()", () => {
     test("ship is sorted in ascending order based on 0th index", () => {
         const array = [
             [4, 3],
@@ -10,7 +10,7 @@ describe("positiveSortShip()", () => {
             [1, 3],
             [0, 3],
         ];
-        const sortedArray = positiveSortShip(array);
+        const sortedArray = getPositiveSortShip(array);
         expect(sortedArray).toEqual([
             [0, 3],
             [1, 3],
@@ -26,7 +26,7 @@ describe("positiveSortShip()", () => {
             [4, 9],
             [4, 5],
         ];
-        const sortedArray = positiveSortShip(array);
+        const sortedArray = getPositiveSortShip(array);
         expect(sortedArray).toEqual([
             [4, 3],
             [4, 5],
@@ -42,7 +42,7 @@ describe("positiveSortShip()", () => {
             [1, 1],
             [1, 0],
         ];
-        const sortedArray = positiveSortShip(array);
+        const sortedArray = getPositiveSortShip(array);
         expect(sortedArray).toEqual([
             [1, 0],
             [1, 1],
@@ -58,7 +58,7 @@ describe("positiveSortShip()", () => {
             [3, 2],
             [3, 7],
         ];
-        const sortedArray = positiveSortShip(array);
+        const sortedArray = getPositiveSortShip(array);
         expect(sortedArray).toEqual([
             [3, 2],
             [3, 5],

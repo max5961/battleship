@@ -1,5 +1,5 @@
 import { Board, Fleet } from "./Board";
-import { positiveSortShip } from "./sortShipArray";
+import { getgetPositiveSortShip } from "./sortShipArray";
 import { cloneDeep } from "lodash";
 
 export class ComputerChooser {
@@ -86,7 +86,7 @@ export class ComputerChooser {
         } else {
             positiveXOrYDirection = [0, 1];
         }
-        const ship = positiveSortShip(this.currentTargetShip);
+        const ship = getgetPositiveSortShip(this.currentTargetShip);
         const board = new Board();
         board.mapInvalidSpaces(ship, this.invalidCoords);
     }
@@ -123,7 +123,7 @@ export class ComputerChooser {
         if (!this.opponentFleet) {
             throw new Error("opponentFleet property is null");
         }
-        const currTarget = positiveSortShip(this.currentTargetShip);
+        const currTarget = getPositiveSortShip(this.currentTargetShip);
         for (const ship of this.opponentFleet) {
             if (ship.length === currTarget.length) {
                 let match: boolean = true;

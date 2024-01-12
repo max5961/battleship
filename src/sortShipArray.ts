@@ -1,7 +1,7 @@
 // helper functions for ComputerChooser class
 // takes an array of ship coordinates and returns a sorted array
 
-export function positiveSortShip(
+export function getPositiveSortShip(
     inputArray: Array<Array<number>>,
 ): Array<Array<number>> {
     const array = inputArray.slice();
