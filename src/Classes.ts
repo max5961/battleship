@@ -1,6 +1,6 @@
 import { getPositiveSortShip } from "./sortShipArray";
 
-export class CoordUtils {
+export class Utils {
     static getRandomCoord(): Array<number> {
         function getRandomNumber(): number {
             return Math.floor(Math.random() * 10);
@@ -12,17 +12,23 @@ export class CoordUtils {
         const [x, y] = coord;
         return x >= 0 && y >= 0 && x <= 9 && y <= 9;
     }
+
+    static getPositiveSortArray(
+        array: Array<Array<number>>,
+    ): Array<Array<number>> {
+        return getPositiveSortShip(array);
+    }
 }
 
 export class Ship {
     coords: Array<Array<number>>;
     direction: Array<number> | null;
-    readonly parentGrid: Array<Array<number>>;
+    parentGrid: Array<Array<number>>;
 
-    constructor(parentGrid: Array<Array<number>>) {
-        this.parentGrid = parentGrid;
+    constructor(board: Board) {
         this.coords = [];
         this.direction = null;
+        this.parentGrid = board.grid;
     }
 
     updateShipDirection(startCoord: Array<number>): void {
@@ -83,6 +89,57 @@ export class Ship {
                 mappingShip = false;
             }
         }
+    }
+
+    getShipCoords(
+        coord: Array<number>,
+        markers: Array<number>,
+        mappedSpaces: Set<string> = new Set(),
+    ): Array<Array<number>> {
+        const [x, y] = coord;
+        if (!this.parentGrid[x]) {
+            return [];
+        }
+        if (mappedSpaces.has(coord.toString())) {
+            return [];
+        }
+        let shipCoord: boolean = false;
+        for (const marker of markers) {
+            if (this.parentGrid[x][y] === marker) {
+                shipCoord = true;
+            }
+        }
+        if (!shipCoord) {
+            return [];
+        }
+
+        mappedSpaces.add(coord.toString());
+        const shipCoords: Array<Array<number>> = [coord];
+        const directions = [[1,0],[-1,0],[0,1],[0,-1]]; // prettier-ignore
+        for (const direction of directions) {
+            const [dx, dy] = direction;
+            const nx = x + dx;
+            const ny = y + dy;
+            const nextCoords: Array<Array<number>> = this.getShipCoords(
+                [nx, ny],
+                markers,
+                mappedSpaces,
+            );
+            if (nextCoords.length) {
+                for (const coord of nextCoords) {
+                    shipCoords.push(coord);
+                }
+            }
+        }
+        return Utils.getPositiveSortArray(shipCoords);
+    }
+
+    getSunkenPartOfShip(coord: Array<number>): Array<Array<number>> {
+        return this.getShipCoords(coord, [2]);
+    }
+
+    getEntireShip(coord: Array<number>): Array<Array<number>> {
+        return this.getShipCoords(coord, [1, 2]);
     }
 
     // returns a copy of shipCoords sorted in ascending order
@@ -276,7 +333,7 @@ export class GridState {
         return (
             !this.invalidCoords.has(coord.toString()) &&
             !this.takenCoords.has(coord.toString()) &&
-            CoordUtils.coordInBounds(coord)
+            Utils.coordInBounds(coord)
         );
     }
 
@@ -284,7 +341,7 @@ export class GridState {
     tryRandomValidCoord(): Array<number> | null {
         let tries: number = 0;
         while (tries < 10) {
-            const coord = CoordUtils.getRandomCoord();
+            const coord = Utils.getRandomCoord();
             if (this.coordIsValid(coord)) {
                 return coord;
             } else {
@@ -296,9 +353,9 @@ export class GridState {
     }
 
     getRandomValidCoord(): Array<number> {
-        let coord: Array<number> = CoordUtils.getRandomCoord();
+        let coord: Array<number> = Utils.getRandomCoord();
         while (!this.coordIsValid(coord)) {
-            coord = CoordUtils.getRandomCoord();
+            coord = Utils.getRandomCoord();
         }
         return coord;
     }
@@ -321,7 +378,7 @@ export class SetupValidator {
                     if (this.gridState.invalidCoords.has(coordString)) {
                         return false;
                     } else {
-                        const ship = new Ship(this.board.grid);
+                        const ship = new Ship(this.board);
                         ship.findShipFromStartCoord([x, y]);
                         this.gridState.addInvalidCoords(ship);
                         this.gridState.addTakenCoords(ship);
@@ -347,7 +404,7 @@ class RandomSetupCreator {
     getRandomBoardSetup(): Board {
         let setupIsValid: boolean = false;
         while (!setupIsValid) {
-            this.attemptRandomBoard();
+            this.attemptRandomSetup();
 
             const setupValidator: SetupValidator = new SetupValidator(
                 this.board,
@@ -360,7 +417,7 @@ class RandomSetupCreator {
     }
 
     // assigns a random board setup to this.board
-    attemptRandomBoard() {
+    attemptRandomSetup() {
         const ships: Array<number> = [5, 4, 4, 3, 3, 3, 2, 2, 2, 2];
         // attempt to make a ship for every shipLength in the Q
         // if no ship is made, an invalid board will be made that will be invalidated by BoardSetupValidator
@@ -414,7 +471,7 @@ class RandomSetupCreator {
         ];
         const [x, y] = startCoord;
         while (directions.length) {
-            const ship: Ship = new Ship(this.board.grid);
+            const ship: Ship = new Ship(this.board);
             const randomIndex = Math.floor(Math.random() * directions.length);
             const [dx, dy] = directions[randomIndex]!;
             directions.splice(randomIndex, 1);
@@ -440,21 +497,73 @@ class RandomSetupCreator {
     }
 }
 
-class ComputerChooser {
-    opponentBoard: Board;
-    gridState: GridState;
-    lastShotMissed: boolean;
-    lastHitCoord: Array<number> | null;
-    currentTargetShip: Ship;
-    possibleDirections: Array<Array<number>>;
+class Chooser {
+    public opponentBoard: Board;
+    public gridState: GridState;
+
+    constructor(opponentBoard: Board) {
+        this.opponentBoard = opponentBoard;
+        this.gridState = new GridState();
+    }
+
+    shotIsOnTarget(coord: Array<number>): boolean {
+        const [x, y] = coord;
+        return this.opponentBoard.grid[x][y] === 1;
+    }
+
+    markHit(coord: Array<number>): void {
+        const [x, y] = coord;
+        this.opponentBoard.grid[x][y] = 2;
+    }
+
+    markMiss(coord: Array<number>): void {
+        const [x, y] = coord;
+        this.opponentBoard.grid[x][y] = 3;
+    }
+}
+
+export class PlayerChooser extends Chooser {
+    constructor(opponentBoard: Board) {
+        super(opponentBoard);
+    }
+
+    takeTurn(coord: Array<number>): void {
+        if (this.shotIsOnTarget(coord)) {
+            this.markHit(coord);
+        }
+    }
+
+    targetShipIsSunk(coord: Array<number>) {
+        const ship: Ship = new Ship(this.opponentBoard);
+        ship.findShipFromAnyCoord(coord);
+    }
+
+    shotIsValid(coord: Array<number>): boolean {
+        const [x, y] = coord;
+        // check if a previous miss
+        if (this.opponentBoard.grid[x][y] === 3) {
+            return false;
+        }
+        // check if a previous hit
+        if (this.opponentBoard.grid[x][y] === 2) {
+            return false;
+        }
+        return true;
+    }
+}
+
+export class ComputerChooser extends Chooser {
+    private lastShotMissed: boolean;
+    private lastHitCoord: Array<number> | null;
+    private currentTargetShip: Ship;
+    private possibleDirections: Array<Array<number>>;
 
     // takes in a VALID board as an initalizer parameter
-    constructor(board: Board) {
-        this.opponentBoard = board;
-        this.gridState = new GridState();
+    constructor(opponentBoard: Board) {
+        super(opponentBoard);
         this.lastShotMissed = true;
         this.lastHitCoord = null;
-        this.currentTargetShip = new Ship(this.opponentBoard.grid);
+        this.currentTargetShip = new Ship(this.opponentBoard);
         this.possibleDirections = this.resetPossibleDirections();
     }
 
@@ -471,22 +580,7 @@ class ComputerChooser {
         this.lastShotMissed = true;
         this.lastHitCoord = null;
         this.possibleDirections = this.resetPossibleDirections();
-        this.currentTargetShip = new Ship(this.opponentBoard.grid);
-    }
-
-    shotIsOnTarget(coord: Array<number>): boolean {
-        const [x, y] = coord;
-        return this.opponentBoard.grid[x][y] === 1;
-    }
-
-    markHit(coord: Array<number>): void {
-        const [x, y] = coord;
-        this.opponentBoard.grid[x][y] = 2;
-    }
-
-    markMiss(coord: Array<number>): void {
-        const [x, y] = coord;
-        this.opponentBoard.grid[x][y] = 3;
+        this.currentTargetShip = new Ship(this.opponentBoard);
     }
 
     takeShot(coord: Array<number>): void {
@@ -622,7 +716,11 @@ class ComputerChooser {
 }
 
 export class UserChooser {
-    constructor() {
-        //
+    opponentBoard: Board;
+    gridState: GridState;
+
+    constructor(opponentBoard: Board = new Board()) {
+        this.opponentBoard = opponentBoard;
+        this.gridState = new GridState();
     }
 }

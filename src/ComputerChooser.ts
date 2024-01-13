@@ -1,5 +1,5 @@
 import { Board, Fleet } from "./Board";
-import { getgetPositiveSortShip } from "./sortShipArray";
+import { getPositiveSortShip } from "./sortShipArray";
 import { cloneDeep } from "lodash";
 
 export class ComputerChooser {
