@@ -461,17 +461,13 @@ export class RandomBoard extends Board {
     }
 
     init() {
-        let boardIsValid = false;
-        while (!boardIsValid) {
-            this.resetRandomBoard();
-            const coordinateMap: Array<Array<number>> =
-                this.getRandomPlacementCoords();
-            this.placeShips(coordinateMap);
-            const boardInitializer: BoardInitializer = new BoardInitializer(
-                this,
-            );
-            if (boardInitializer.boardIsValid()) {
-                boardIsValid = true;
+        let validFleet: boolean = false;
+        while (!validFleet) {
+            this.gridState = new GridState();
+            this.createRandomFleet();
+            if (this.fleet.fleetIsValid()) {
+                this.placeShips();
+                validFleet = true;
             }
         }
     }
@@ -481,15 +477,22 @@ export class RandomBoard extends Board {
         this.gridState = new GridState();
     }
 
-    placeShips(coordinateMap: Array<Array<number>>): void {
-        for (const coord of coordinateMap) {
-            this.grid[coord[0]][coord[1]] = 1;
+    placeShips(): void {
+        for (const key of Object.keys(this.fleet)) {
+            if (key !== "mappedFleet") {
+                for (const ship of this.fleet[key]) {
+                    for (const coord of ship.coords) {
+                        this.grid[coord[0]][coord[1]] = 1;
+                    }
+                }
+            }
         }
     }
 
     // returns an array of coordinates to map to the grid
-    getRandomPlacementCoords(): Array<Array<number>> {
-        const coordinateMap: Array<Array<Array<number>>> = [];
+    createRandomFleet(): void {
+        this.fleet = new Fleet();
+
         const ships: Array<number> = [5, 4, 4, 3, 3, 3, 2, 2, 2, 2];
         // attempt to make a ship for every shipLength in the Q
         // if no ship is made, an invalid board will be made that will be invalidated by BoardboardInitializer
@@ -521,10 +524,6 @@ export class RandomBoard extends Board {
                         if (!randomValidCoord) {
                             break;
                         }
-
-                        // successfully made ship, add it to the fleet
-                    } else {
-                        coordinateMap.push(ship.coords);
                     }
                 }
                 // check for success
@@ -534,10 +533,10 @@ export class RandomBoard extends Board {
                     shipCreated = true;
                     this.gridState.addInvalidCoordsRecursive(ship);
                     this.gridState.addTakenCoords(ship);
+                    this.fleet.addShip(ship);
                 }
             }
         }
-        return coordinateMap.flat();
     }
 
     createShip(startCoord: Array<number>, shipLength: number): Ship | null {
@@ -566,6 +565,7 @@ export class RandomBoard extends Board {
                     ny += dy;
                     createdLength++;
                     if (createdLength === shipLength) {
+                        ship.direction = [dx, dy];
                         return ship;
                     }
                 }
@@ -575,206 +575,206 @@ export class RandomBoard extends Board {
     }
 }
 
-class Chooser {
-    public opponentBoard: Board;
-    public gridState: GridState;
-
-    constructor(opponentBoard: Board) {
-        this.opponentBoard = opponentBoard;
-        this.gridState = new GridState();
-    }
-
-    shotIsOnTarget(coord: Array<number>): boolean {
-        const [x, y] = coord;
-        return this.opponentBoard.grid[x][y] === 1;
-    }
-
-    markHit(coord: Array<number>): void {
-        const [x, y] = coord;
-        this.opponentBoard.grid[x][y] = 2;
-    }
-
-    markMiss(coord: Array<number>): void {
-        const [x, y] = coord;
-        this.opponentBoard.grid[x][y] = 3;
-    }
-}
-
-export class ComputerChooserMemory {
-    public lastShotMissed: boolean;
-    public lastHitCoord: Array<number> | null;
-    public currentTargetShip: Ship;
-    public possibleDirections: Array<Array<number>>;
-
-    constructor(opponentBoard: Board) {
-        this.lastShotMissed = true;
-        this.lastHitCoord = null;
-        this.currentTargetShip = new Ship(opponentBoard);
-        this.possibleDirections = this.getPossibleDirections();
-    }
-
-    getPossibleDirections(): Array<Array<number>> {
-        return [
-            [0, 1],
-            [0, -1],
-            [1, 0],
-            [-1, 0],
-        ];
-    }
-}
-
-export class ComputerChooser extends Chooser {
-    memory: ComputerChooserMemory;
-
-    // takes in a ***valid board as an initalizer parameter
-    constructor(opponentBoard: Board) {
-        super(opponentBoard);
-        this.memory = new ComputerChooserMemory(opponentBoard);
-    }
-
-    resetMemory(): void {
-        this.memory = new ComputerChooserMemory(this.opponentBoard);
-    }
-
-    takeShot(coord: Array<number>): void {
-        this.gridState.takenCoords.add(coord.toString());
-
-        if (this.shotIsOnTarget(coord)) {
-            this.markHit(coord);
-            this.memory.lastHitCoord = coord;
-            this.memory.lastShotMissed = false;
-            this.memory.currentTargetShip.coords.push(coord);
-        } else {
-            this.markMiss(coord);
-            this.memory.lastShotMissed = true;
-        }
-    }
-
-    currentTargetShipIsSunk(): boolean {
-        const currTarget: Array<Array<number>> =
-            this.memory.currentTargetShip.getPositiveSortShip();
-
-        for (const ship of this.opponentBoard.fleet.mappedFleet) {
-            if (ship.length === currTarget.length) {
-                let match: boolean = true;
-                for (let i = 0; i < ship.length; i++) {
-                    if (ship[i][0] !== currTarget[i][0]) {
-                        match = false;
-                    }
-                    if (ship[i][1] !== currTarget[i][1]) {
-                        match = false;
-                    }
-                }
-                if (match) return true;
-            }
-        }
-        return false;
-    }
-
-    takeTurn(): void {
-        if (this.currentTargetShipIsSunk()) {
-            this.gridState.addInvalidCoordsRecursive(this.currentTargetShip);
-            this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
-            this.resetMemory();
-        }
-
-        // last shot was a hit, target area is now focused
-        if (this.lastHitCoord) {
-            this.takeFocusedShot();
-        } else {
-            const coord = this.gridState.getRandomValidCoord();
-            this.takeShot(coord);
-        }
-    }
-
-    takeFocusedShot(): void {
-        if (this.currentTargetShip.direction) {
-            this.shootAlongCurrentDirection();
-        } else {
-            this.shootAndSearchForDirection();
-        }
-    }
-
-    shootAlongCurrentDirection(): void {
-        if (!this.lastHitCoord) {
-            throw new Error("lastHitCoord property is null");
-        }
-        if (!this.currentTargetShip.direction) {
-            throw new Error("currentTargetShip.direction property is null");
-        }
-
-        let x: number;
-        let y: number;
-        // last shot was a miss (reached beyond the ends of the ship), ship direction was reversed
-        // derive dx, dy from the first hit
-        if (this.lastShotMissed) {
-            [x, y] = this.currentTargetShip[0];
-            this.lastShotMissed = false;
-
-            // else keep going along current direction
-        } else {
-            [x, y] = this.lastHitCoord;
-        }
-        const [dx, dy] = this.currentTargetShip.direction;
-        const coord = [x + dx, y + dy];
-
-        if (!this.shotIsOnTarget(coord)) {
-            this.currentTargetShip.reverseShipDirection();
-            // if the coord is in a spot that cannot contain a ship, skip taking
-            // the illogical shot and immediately take the next shot in the reverse direction
-            if (!this.gridState.coordIsValid(coord)) {
-                this.lastShotMissed = true;
-                this.shootAlongCurrentDirection();
-                return; // make sure to return early (prevent double shot)
-            }
-        }
-
-        // finally, take the shot
-        this.takeShot(coord);
-    }
-
-    shootAndSearchForDirection(): void {
-        if (!this.lastHitCoord) {
-            throw new Error("lastHitCoord property is null");
-        }
-
-        const getRandomDirectionIndex = (): number =>
-            Math.floor(Math.random() * this.possibleDirections.length);
-
-        const [lx, ly] = this.lastHitCoord!;
-        const nextCoord: Array<number> = [];
-
-        // take the possibleDirections property and splice at random until a valid coord is found
-        while (!nextCoord.length) {
-            const index = getRandomDirectionIndex();
-            const [dx, dy] = this.possibleDirections[index];
-            this.possibleDirections.splice(index, 1);
-            const nx = lx + dx;
-            const ny = ly + dy;
-
-            // ONLY check if the coordinate is valid.  NOT if its also on target
-            if (this.gridState.coordIsValid([nx, ny])) {
-                nextCoord.push(nx);
-                nextCoord.push(ny);
-
-                // if the nextCoord is a hit: update currentDirection, reset possibleDirections
-                if (this.shotIsOnTarget(nextCoord)) {
-                    this.currentTargetShip.direction = [dx, dy];
-                    this.possibleDirections = this.resetPossibleDirections();
-                }
-            }
-        }
-        // finally, take the shot
-        this.takeShot(nextCoord);
-    }
-}
-
-export class UserChooser {
-    opponentBoard: Board;
-    gridState: GridState;
-
-    constructor(opponentBoard: Board = new Board()) {
-        this.opponentBoard = opponentBoard;
-        this.gridState = new GridState();
-    }
-}
+// class Chooser {
+//     public opponentBoard: Board;
+//     public gridState: GridState;
+//
+//     constructor(opponentBoard: Board) {
+//         this.opponentBoard = opponentBoard;
+//         this.gridState = new GridState();
+//     }
+//
+//     shotIsOnTarget(coord: Array<number>): boolean {
+//         const [x, y] = coord;
+//         return this.opponentBoard.grid[x][y] === 1;
+//     }
+//
+//     markHit(coord: Array<number>): void {
+//         const [x, y] = coord;
+//         this.opponentBoard.grid[x][y] = 2;
+//     }
+//
+//     markMiss(coord: Array<number>): void {
+//         const [x, y] = coord;
+//         this.opponentBoard.grid[x][y] = 3;
+//     }
+// }
+//
+// export class ComputerChooserMemory {
+//     public lastShotMissed: boolean;
+//     public lastHitCoord: Array<number> | null;
+//     public currentTargetShip: Ship;
+//     public possibleDirections: Array<Array<number>>;
+//
+//     constructor(opponentBoard: Board) {
+//         this.lastShotMissed = true;
+//         this.lastHitCoord = null;
+//         this.currentTargetShip = new Ship(opponentBoard);
+//         this.possibleDirections = this.getPossibleDirections();
+//     }
+//
+//     getPossibleDirections(): Array<Array<number>> {
+//         return [
+//             [0, 1],
+//             [0, -1],
+//             [1, 0],
+//             [-1, 0],
+//         ];
+//     }
+// }
+//
+// export class ComputerChooser extends Chooser {
+//     memory: ComputerChooserMemory;
+//
+//     // takes in a ***valid board as an initalizer parameter
+//     constructor(opponentBoard: Board) {
+//         super(opponentBoard);
+//         this.memory = new ComputerChooserMemory(opponentBoard);
+//     }
+//
+//     resetMemory(): void {
+//         this.memory = new ComputerChooserMemory(this.opponentBoard);
+//     }
+//
+//     takeShot(coord: Array<number>): void {
+//         this.gridState.takenCoords.add(coord.toString());
+//
+//         if (this.shotIsOnTarget(coord)) {
+//             this.markHit(coord);
+//             this.memory.lastHitCoord = coord;
+//             this.memory.lastShotMissed = false;
+//             this.memory.currentTargetShip.coords.push(coord);
+//         } else {
+//             this.markMiss(coord);
+//             this.memory.lastShotMissed = true;
+//         }
+//     }
+//
+//     currentTargetShipIsSunk(): boolean {
+//         const currTarget: Array<Array<number>> =
+//             this.memory.currentTargetShip.getPositiveSortShip();
+//
+//         for (const ship of this.opponentBoard.fleet.mappedFleet) {
+//             if (ship.length === currTarget.length) {
+//                 let match: boolean = true;
+//                 for (let i = 0; i < ship.length; i++) {
+//                     if (ship[i][0] !== currTarget[i][0]) {
+//                         match = false;
+//                     }
+//                     if (ship[i][1] !== currTarget[i][1]) {
+//                         match = false;
+//                     }
+//                 }
+//                 if (match) return true;
+//             }
+//         }
+//         return false;
+//     }
+//
+//     takeTurn(): void {
+//         if (this.currentTargetShipIsSunk()) {
+//             this.gridState.addInvalidCoordsRecursive(this.currentTargetShip);
+//             this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
+//             this.resetMemory();
+//         }
+//
+//         // last shot was a hit, target area is now focused
+//         if (this.lastHitCoord) {
+//             this.takeFocusedShot();
+//         } else {
+//             const coord = this.gridState.getRandomValidCoord();
+//             this.takeShot(coord);
+//         }
+//     }
+//
+//     takeFocusedShot(): void {
+//         if (this.currentTargetShip.direction) {
+//             this.shootAlongCurrentDirection();
+//         } else {
+//             this.shootAndSearchForDirection();
+//         }
+//     }
+//
+//     shootAlongCurrentDirection(): void {
+//         if (!this.lastHitCoord) {
+//             throw new Error("lastHitCoord property is null");
+//         }
+//         if (!this.currentTargetShip.direction) {
+//             throw new Error("currentTargetShip.direction property is null");
+//         }
+//
+//         let x: number;
+//         let y: number;
+//         // last shot was a miss (reached beyond the ends of the ship), ship direction was reversed
+//         // derive dx, dy from the first hit
+//         if (this.lastShotMissed) {
+//             [x, y] = this.currentTargetShip[0];
+//             this.lastShotMissed = false;
+//
+//             // else keep going along current direction
+//         } else {
+//             [x, y] = this.lastHitCoord;
+//         }
+//         const [dx, dy] = this.currentTargetShip.direction;
+//         const coord = [x + dx, y + dy];
+//
+//         if (!this.shotIsOnTarget(coord)) {
+//             this.currentTargetShip.reverseShipDirection();
+//             // if the coord is in a spot that cannot contain a ship, skip taking
+//             // the illogical shot and immediately take the next shot in the reverse direction
+//             if (!this.gridState.coordIsValid(coord)) {
+//                 this.lastShotMissed = true;
+//                 this.shootAlongCurrentDirection();
+//                 return; // make sure to return early (prevent double shot)
+//             }
+//         }
+//
+//         // finally, take the shot
+//         this.takeShot(coord);
+//     }
+//
+//     shootAndSearchForDirection(): void {
+//         if (!this.lastHitCoord) {
+//             throw new Error("lastHitCoord property is null");
+//         }
+//
+//         const getRandomDirectionIndex = (): number =>
+//             Math.floor(Math.random() * this.possibleDirections.length);
+//
+//         const [lx, ly] = this.lastHitCoord!;
+//         const nextCoord: Array<number> = [];
+//
+//         // take the possibleDirections property and splice at random until a valid coord is found
+//         while (!nextCoord.length) {
+//             const index = getRandomDirectionIndex();
+//             const [dx, dy] = this.possibleDirections[index];
+//             this.possibleDirections.splice(index, 1);
+//             const nx = lx + dx;
+//             const ny = ly + dy;
+//
+//             // ONLY check if the coordinate is valid.  NOT if its also on target
+//             if (this.gridState.coordIsValid([nx, ny])) {
+//                 nextCoord.push(nx);
+//                 nextCoord.push(ny);
+//
+//                 // if the nextCoord is a hit: update currentDirection, reset possibleDirections
+//                 if (this.shotIsOnTarget(nextCoord)) {
+//                     this.currentTargetShip.direction = [dx, dy];
+//                     this.possibleDirections = this.resetPossibleDirections();
+//                 }
+//             }
+//         }
+//         // finally, take the shot
+//         this.takeShot(nextCoord);
+//     }
+// }
+//
+// export class UserChooser {
+//     opponentBoard: Board;
+//     gridState: GridState;
+//
+//     constructor(opponentBoard: Board = new Board()) {
+//         this.opponentBoard = opponentBoard;
+//         this.gridState = new GridState();
+//     }
+// }
