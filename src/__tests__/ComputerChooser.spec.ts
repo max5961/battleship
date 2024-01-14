@@ -1,5 +1,5 @@
 import { cloneDeep } from "lodash";
-import { Board, ComputerChooser, TestSort } from "../Classes";
+import { Board, ComputerChooser } from "../Classes";
 
 // ***including the first shot on target, carriers must be destroyed in: shots <= 8 && shots >=5
 interface TestEfficientSink {
@@ -66,16 +66,22 @@ const carrierEdgeHorizontal: TestEfficientSink = {
     endCoord: [0, 4],
 };
 
-// describe("ComputerChooser.currentTargetShipIsSunk", () => {
-//     test("Recognize when a ship is sunk", () => {
-//         cpu.currentTargetShip = [ [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], ]; // prettier-ignore
-//         cpu.opponentBoard = carrierHorizontal.opponentBoard;
-//         cpu.opponentFleet = carrierHorizontal.opponentFleet;
-//         const cpu = new ComputerChooser();
-//         const shipSunk: boolean = cpu.currentTargetShipIsSunk();
-//         expect(shipSunk).toBe(true);
-//     });
-// });
+describe("ComputerChooser.currentTargetShipIsSunk", () => {
+    test("Recognize when a ship is sunk", () => {
+        const cpu = new ComputerChooser(new Board());
+        cpu.memory.currentTargetShip.coords = [
+            [1, 1],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+        ];
+        cpu.opponentBoard.grid = carrierHorizontal.opponentBoard;
+        cpu.opponentBoard.fleet.mappedFleet = carrierHorizontal.opponentFleet;
+        const shipSunk: boolean = cpu.currentTargetShipIsSunk();
+        expect(shipSunk).toBe(true);
+    });
+});
 
 describe("ComputerChooser.takeTurn() - first shot is on target", () => {
     test.each([
