@@ -1,4 +1,4 @@
-import { Board, RandomBoard, BoardInitializer, Ship } from "../Classes";
+import { Board, RandomBoard, BoardValidator, Ship } from "../Classes";
 
 describe("Ship.getSunkenPartOfShip(coord)", () => {
     test("retrieve back [[1,1]]", () => {
@@ -161,7 +161,7 @@ describe("Ship.getEntireShip(coord)", () => {
     });
 });
 
-describe("boardInitializer.boardIsValid()", () => {
+describe("boardValidator.boardIsValid()", () => {
     test("Board should be valid", () => {
         const validGrid: Array<Array<number>> = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -176,8 +176,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(true);
     });
     test("Board should be valid", () => {
@@ -194,8 +194,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(true);
     });
     test("Board should be valid", () => {
@@ -212,8 +212,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(true);
     });
     test("Board should be invalid", () => {
@@ -230,8 +230,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(invalidGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -248,8 +248,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [0, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -266,8 +266,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -284,8 +284,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(validGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -302,8 +302,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(invalidGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -320,8 +320,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
         ];
         const board: Board = new Board(invalidGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -338,8 +338,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         ];
         const board: Board = new Board(invalidGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
@@ -356,8 +356,8 @@ describe("boardInitializer.boardIsValid()", () => {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ];
         const board: Board = new Board(invalidGrid);
-        const boardInitializer: BoardInitializer = new BoardInitializer(board);
-        const isValid: boolean = boardInitializer.boardIsValid();
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
         expect(isValid).toBe(false);
     });
 });
@@ -367,10 +367,10 @@ describe("SetupCreator.getRandomSetup()", () => {
         let allAreValid: boolean = true;
         for (let i = 0; i < 1000; i++) {
             const randomBoard: RandomBoard = new RandomBoard();
-            const boardInitializer: BoardInitializer = new BoardInitializer(
+            const boardValidator: BoardValidator = new BoardValidator(
                 randomBoard,
             );
-            if (!boardInitializer.boardIsValid()) {
+            if (!boardValidator.boardIsValid()) {
                 allAreValid = false;
             }
         }

@@ -386,7 +386,7 @@ export class GridState {
     }
 }
 
-export class BoardInitializer {
+export class BoardValidator {
     board: Board;
     gridState: GridState;
 
@@ -395,10 +395,10 @@ export class BoardInitializer {
         this.gridState = new GridState();
     }
 
-    // this method ALSO adds ships to the Fleet object of the Board object which
+    // design flaw: this method ALSO adds ships to the Fleet object of the Board object which
     // violates SRP, but...since the boolean results of this method are required
-    // before any game starts, remembering to also add another method that adds Ships
-    // could create more unneeded complexity
+    // before any game starts, remembering run a method to add all the ships to the Fleet manually
+    // would introduce bugs
     boardIsValid(): boolean {
         this.board.fleet = new Fleet();
 
