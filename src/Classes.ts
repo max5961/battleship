@@ -398,7 +398,7 @@ export class BoardInitializer {
     // this method ALSO adds ships to the Fleet object of the Board object which
     // violates SRP, but...since the boolean results of this method are required
     // before any game starts, remembering to also add another method that adds Ships
-    // could create more complexity...a current design flaw
+    // could create more unneeded complexity
     boardIsValid(): boolean {
         this.board.fleet = new Fleet();
 
@@ -411,7 +411,7 @@ export class BoardInitializer {
                             return false;
                         } else {
                             const ship = new Ship(this.board);
-                            ship.coords = this.getEntireShip([x, y]);
+                            ship.coords = this.findShip([x, y]);
                             this.gridState.addInvalidCoordsRecursive(ship);
                             this.gridState.addTakenCoords(ship);
                             this.board.fleet.addShip(ship);
@@ -424,7 +424,7 @@ export class BoardInitializer {
         return this.board.fleet.fleetIsValid();
     }
 
-    getEntireShip(coord: Array<number>): Array<Array<number>> {
+    findShip(coord: Array<number>): Array<Array<number>> {
         const directions: Array<Array<number>> = [
             [0, 1],
             [1, 0],
@@ -457,14 +457,15 @@ export class RandomBoard extends Board {
     constructor() {
         super();
         this.gridState = new GridState();
-        this.initialize();
+        this.init();
     }
 
-    initialize() {
+    init() {
         let boardIsValid = false;
         while (!boardIsValid) {
             this.resetRandomBoard();
-            const coordinateMap: Array<Array<number>> = this.getRandomCoords();
+            const coordinateMap: Array<Array<number>> =
+                this.getRandomPlacementCoords();
             this.placeShips(coordinateMap);
             const boardInitializer: BoardInitializer = new BoardInitializer(
                 this,
@@ -486,8 +487,8 @@ export class RandomBoard extends Board {
         }
     }
 
-    // assigns a random board setup to this.board
-    getRandomCoords(): Array<Array<number>> {
+    // returns an array of coordinates to map to the grid
+    getRandomPlacementCoords(): Array<Array<number>> {
         const coordinateMap: Array<Array<Array<number>>> = [];
         const ships: Array<number> = [5, 4, 4, 3, 3, 3, 2, 2, 2, 2];
         // attempt to make a ship for every shipLength in the Q
@@ -599,52 +600,20 @@ class Chooser {
     }
 }
 
-export class PlayerChooser extends Chooser {
+export class ComputerChooserMemory {
+    public lastShotMissed: boolean;
+    public lastHitCoord: Array<number> | null;
+    public currentTargetShip: Ship;
+    public possibleDirections: Array<Array<number>>;
+
     constructor(opponentBoard: Board) {
-        super(opponentBoard);
-    }
-
-    takeTurn(coord: Array<number>): void {
-        if (this.shotIsOnTarget(coord)) {
-            this.markHit(coord);
-        }
-    }
-
-    targetShipIsSunk(coord: Array<number>) {
-        const ship: Ship = new Ship(this.opponentBoard);
-        ship.findShipFromAnyCoord(coord);
-    }
-
-    shotIsValid(coord: Array<number>): boolean {
-        const [x, y] = coord;
-        // check if a previous miss
-        if (this.opponentBoard.grid[x][y] === 3) {
-            return false;
-        }
-        // check if a previous hit
-        if (this.opponentBoard.grid[x][y] === 2) {
-            return false;
-        }
-        return true;
-    }
-}
-
-export class ComputerChooser extends Chooser {
-    private lastShotMissed: boolean;
-    private lastHitCoord: Array<number> | null;
-    private currentTargetShip: Ship;
-    private possibleDirections: Array<Array<number>>;
-
-    // takes in a VALID board as an initalizer parameter
-    constructor(opponentBoard: Board) {
-        super(opponentBoard);
         this.lastShotMissed = true;
         this.lastHitCoord = null;
-        this.currentTargetShip = new Ship(this.opponentBoard);
-        this.possibleDirections = this.resetPossibleDirections();
+        this.currentTargetShip = new Ship(opponentBoard);
+        this.possibleDirections = this.getPossibleDirections();
     }
 
-    resetPossibleDirections(): Array<Array<number>> {
+    getPossibleDirections(): Array<Array<number>> {
         return [
             [0, 1],
             [0, -1],
@@ -652,12 +621,19 @@ export class ComputerChooser extends Chooser {
             [-1, 0],
         ];
     }
+}
 
-    resetData(): void {
-        this.lastShotMissed = true;
-        this.lastHitCoord = null;
-        this.possibleDirections = this.resetPossibleDirections();
-        this.currentTargetShip = new Ship(this.opponentBoard);
+export class ComputerChooser extends Chooser {
+    memory: ComputerChooserMemory;
+
+    // takes in a ***valid board as an initalizer parameter
+    constructor(opponentBoard: Board) {
+        super(opponentBoard);
+        this.memory = new ComputerChooserMemory(opponentBoard);
+    }
+
+    resetMemory(): void {
+        this.memory = new ComputerChooserMemory(this.opponentBoard);
     }
 
     takeShot(coord: Array<number>): void {
@@ -665,17 +641,18 @@ export class ComputerChooser extends Chooser {
 
         if (this.shotIsOnTarget(coord)) {
             this.markHit(coord);
-            this.lastHitCoord = coord;
-            this.lastShotMissed = false;
-            this.currentTargetShip.coords.push(coord);
+            this.memory.lastHitCoord = coord;
+            this.memory.lastShotMissed = false;
+            this.memory.currentTargetShip.coords.push(coord);
         } else {
             this.markMiss(coord);
-            this.lastShotMissed = true;
+            this.memory.lastShotMissed = true;
         }
     }
 
     currentTargetShipIsSunk(): boolean {
-        const currTarget = this.currentTargetShip.getPositiveSortShip();
+        const currTarget: Array<Array<number>> =
+            this.memory.currentTargetShip.getPositiveSortShip();
 
         for (const ship of this.opponentBoard.fleet.mappedFleet) {
             if (ship.length === currTarget.length) {
@@ -698,7 +675,7 @@ export class ComputerChooser extends Chooser {
         if (this.currentTargetShipIsSunk()) {
             this.gridState.addInvalidCoordsRecursive(this.currentTargetShip);
             this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
-            this.resetData();
+            this.resetMemory();
         }
 
         // last shot was a hit, target area is now focused

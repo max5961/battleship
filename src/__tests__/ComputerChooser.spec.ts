@@ -1,5 +1,5 @@
 import { cloneDeep } from "lodash";
-import { ComputerChooser } from "../ComputerChooser";
+import { Board, ComputerChooser } from "../Classes";
 // ***including the first shot on target, carriers must be destroyed in: shots <= 8 && shots >=5
 interface TestEfficientSink {
     opponentBoard: Array<Array<number>>;
@@ -171,11 +171,9 @@ describe("ComputerChooser.takeTurn() - first shot is on target", () => {
         ],
     ])(
         "efficiently sink ship",
-        (opponentBoard, opponentFleet, firstShot, params) => {
-            const cpu = new ComputerChooser();
-            cpu.opponentBoard = opponentBoard;
-            cpu.opponentFleet = opponentFleet;
-
+        (opponentBoard, opponentMappedFleet, firstShot, params) => {
+            const cpu = new ComputerChooser(new Board(opponentBoard));
+            cpu.opponentBoard.fleet.mappedFleet = opponentMappedFleet;
             cpu.takeShot(firstShot);
             let shots: number = 1;
             for (let i = 0; i < 10; i++) {
