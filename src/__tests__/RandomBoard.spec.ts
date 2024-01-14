@@ -1,4 +1,4 @@
-import { Board, RandomBoard, BoardValidator } from "../Classes";
+import { RandomBoard, BoardValidator } from "../Classes";
 
 describe("RandomBoard", () => {
     test("new RandomBoard() creates a valid board - 1000 iterations)", () => {

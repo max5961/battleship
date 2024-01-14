@@ -18,15 +18,6 @@ export class Utils {
     ): Array<Array<number>> {
         return getPositiveSortShip(array);
     }
-
-    static getDirections(): Array<Array<number>> {
-        return [
-            [0, 1],
-            [0, -1],
-            [1, 0],
-            [-1, 0],
-        ];
-    }
 }
 
 export class Ship {
@@ -618,15 +609,6 @@ export class ComputerChooserMemory {
             [-1, 0],
         ];
     }
-
-    resetPossibleDirections(): Array<Array<number>> {
-        this.possibleDirections = [
-            [0, 1],
-            [0, -1],
-            [1, 0],
-            [-1, 0],
-        ];
-    }
 }
 
 export class ComputerChooser extends Chooser {
@@ -738,10 +720,6 @@ export class ComputerChooser extends Chooser {
                 // if the nextCoord is a hit: update currentDirection, reset possibleDirections
                 if (this.shotIsOnTarget(nextCoord)) {
                     this.memory.currentTargetShip.direction = [dx, dy];
-                    // thinking I don't need to reset possible directions because
-                    // this gets reset when the memory property gets reset
-                    this.memory.possibleDirections =
-                        this.memory.resetPossibleDirections();
                 }
             }
         }
