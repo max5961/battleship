@@ -1,4 +1,3 @@
-import { ArrayIterator } from "lodash";
 import { getPositiveSortShip } from "./sortShipArray";
 
 export class Utils {
@@ -33,12 +32,12 @@ export class Utils {
 export class Ship {
     coords: Array<Array<number>>;
     direction: Array<number> | null;
-    parentGrid: Array<Array<number>>;
+    parentBoard: Board;
 
-    constructor(board: Board) {
+    constructor(parentBoard: Board) {
         this.coords = [];
         this.direction = null;
-        this.parentGrid = board.grid;
+        this.parentBoard = parentBoard;
     }
 
     updateShipDirection(startCoord: Array<number>): void {
@@ -53,7 +52,10 @@ export class Ship {
             const [dx, dy] = possibleDirections.shift()!;
             const nx = x + dx;
             const ny = y + dy;
-            if (this.parentGrid[nx] && this.parentGrid[nx][ny] !== 0) {
+            if (
+                this.parentBoard.grid[nx] &&
+                this.parentBoard.grid[nx][ny] !== 0
+            ) {
                 this.direction = [dx, dy];
             }
         }
@@ -82,7 +84,7 @@ export class Ship {
         mappedSpaces: Set<string> = new Set(),
     ): Array<Array<number>> {
         const [x, y] = coord;
-        if (!this.parentGrid[x]) {
+        if (!this.parentBoard.grid[x]) {
             return [];
         }
         if (mappedSpaces.has(coord.toString())) {
@@ -90,7 +92,10 @@ export class Ship {
         }
         let shipCoord: boolean = false;
         for (const marker of markers) {
-            if (this.parentGrid[x] && this.parentGrid[x][y] === marker) {
+            if (
+                this.parentBoard.grid[x] &&
+                this.parentBoard.grid[x][y] === marker
+            ) {
                 shipCoord = true;
             }
         }
@@ -251,7 +256,7 @@ export class Board {
         this.sunkenFleet = new SunkenFleet();
     }
 
-    resetGridAndFleet(): void {
+    resetBoard(): void {
         this.grid = new Array(10).fill(null).map(() => new Array(10).fill(0));
         this.fleet = new Fleet();
     }
@@ -360,7 +365,7 @@ export class GridState {
     // return coord or null if no coords available
     tryRandomValidCoord(): Array<number> | null {
         let tries: number = 0;
-        while (tries < 25) {
+        while (tries < 20) {
             const coord = Utils.getRandomCoord();
             if (this.coordIsValid(coord)) {
                 return coord;
@@ -381,7 +386,7 @@ export class GridState {
     }
 }
 
-export class SetupValidator {
+export class BoardInitializer {
     board: Board;
     gridState: GridState;
 
@@ -390,7 +395,13 @@ export class SetupValidator {
         this.gridState = new GridState();
     }
 
+    // this method ALSO adds ships to the Fleet object of the Board object which
+    // violates SRP, but...since the boolean results of this method are required
+    // before any game starts, remembering to also add another method that adds Ships
+    // could create more complexity...a current design flaw
     boardIsValid(): boolean {
+        this.board.fleet = new Fleet();
+
         for (let x = 0; x < 10; x++) {
             for (let y = 0; y < 10; y++) {
                 if (this.board.grid[x][y] === 1) {
@@ -440,35 +451,47 @@ export class SetupValidator {
     }
 }
 
-export class SetupCreator {
-    board: Board;
+export class RandomBoard extends Board {
     gridState: GridState;
 
     constructor() {
-        this.board = new Board();
+        super();
+        this.gridState = new GridState();
+        this.initialize();
+    }
+
+    initialize() {
+        let boardIsValid = false;
+        while (!boardIsValid) {
+            this.resetRandomBoard();
+            const coordinateMap: Array<Array<number>> = this.getRandomCoords();
+            this.placeShips(coordinateMap);
+            const boardInitializer: BoardInitializer = new BoardInitializer(
+                this,
+            );
+            if (boardInitializer.boardIsValid()) {
+                boardIsValid = true;
+            }
+        }
+    }
+
+    resetRandomBoard(): void {
+        this.resetBoard();
         this.gridState = new GridState();
     }
 
-    getRandomBoardSetup(): Board {
-        let setupIsValid: boolean = false;
-        while (!setupIsValid) {
-            this.board = new Board();
-            this.gridState = new GridState();
-            this.attemptRandomSetup();
-
-            const setupValidator: SetupValidator = new SetupValidator(
-                this.board,
-            );
-            setupIsValid = setupValidator.boardIsValid();
+    placeShips(coordinateMap: Array<Array<number>>): void {
+        for (const coord of coordinateMap) {
+            this.grid[coord[0]][coord[1]] = 1;
         }
-        return this.board;
     }
 
     // assigns a random board setup to this.board
-    attemptRandomSetup(): void {
+    getRandomCoords(): Array<Array<number>> {
+        const coordinateMap: Array<Array<Array<number>>> = [];
         const ships: Array<number> = [5, 4, 4, 3, 3, 3, 2, 2, 2, 2];
         // attempt to make a ship for every shipLength in the Q
-        // if no ship is made, an invalid board will be made that will be invalidated by BoardSetupValidator
+        // if no ship is made, an invalid board will be made that will be invalidated by BoardboardInitializer
         // 1. Get a random coord that isn't already taken or part of an invalid space
         // 2. Attempt to create a ship starting at random coord at every possible direction at random
         // 3. If a ship is made, add it to the fleet. If not, try again until out of tries
@@ -500,7 +523,7 @@ export class SetupCreator {
 
                         // successfully made ship, add it to the fleet
                     } else {
-                        this.board.fleet.mappedFleet.push(ship.coords);
+                        coordinateMap.push(ship.coords);
                     }
                 }
                 // check for success
@@ -513,7 +536,7 @@ export class SetupCreator {
                 }
             }
         }
-        this.placeShips();
+        return coordinateMap.flat();
     }
 
     createShip(startCoord: Array<number>, shipLength: number): Ship | null {
@@ -525,7 +548,7 @@ export class SetupCreator {
         ];
         const [x, y] = startCoord;
         while (directions.length) {
-            const ship: Ship = new Ship(this.board);
+            const ship: Ship = new Ship(this);
             const randomIndex = Math.floor(Math.random() * directions.length);
             const [dx, dy] = directions[randomIndex]!;
             directions.splice(randomIndex, 1);
@@ -548,15 +571,6 @@ export class SetupCreator {
             }
         }
         return null;
-    }
-
-    placeShips(): void {
-        for (const ship of this.board.fleet.mappedFleet) {
-            for (const coord of ship) {
-                const [x, y] = coord;
-                this.board.grid[x][y] = 1;
-            }
-        }
     }
 }
 

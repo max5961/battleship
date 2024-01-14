@@ -129,7 +129,7 @@ export class BoardCoordState {
     }
 }
 
-export class BoardSetupValidator {
+export class BoardboardInitializer {
     board: Array<Array<number>>;
     boardState: BoardCoordState;
     fleet: Fleet;
