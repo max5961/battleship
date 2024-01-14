@@ -1,4 +1,4 @@
-import { getPositiveSortShip, negativeSortShip } from "../sortShipArray";
+import { getPositiveSortShip, getNegativeSortShip } from "../sortShipArray";
 
 // helper functions for ComputerChooser class
 describe("getPositiveSortShip()", () => {
@@ -77,7 +77,7 @@ describe("negativeSortShip()", () => {
             [1, 3],
             [0, 3],
         ];
-        const sortedArray = negativeSortShip(array);
+        const sortedArray = getNegativeSortShip(array);
         expect(sortedArray).toEqual([
             [4, 3],
             [3, 3],
@@ -93,7 +93,7 @@ describe("negativeSortShip()", () => {
             [4, 9],
             [4, 5],
         ];
-        const sortedArray = negativeSortShip(array);
+        const sortedArray = getNegativeSortShip(array);
         expect(sortedArray).toEqual([
             [4, 9],
             [4, 8],
@@ -109,7 +109,7 @@ describe("negativeSortShip()", () => {
             [1, 1],
             [1, 0],
         ];
-        const sortedArray = negativeSortShip(array);
+        const sortedArray = getNegativeSortShip(array);
         expect(sortedArray).toEqual([
             [1, 4],
             [1, 3],
@@ -125,7 +125,7 @@ describe("negativeSortShip()", () => {
             [3, 2],
             [3, 7],
         ];
-        const sortedArray = negativeSortShip(array);
+        const sortedArray = getNegativeSortShip(array);
         expect(sortedArray).toEqual([
             [3, 8],
             [3, 7],
