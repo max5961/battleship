@@ -1,4 +1,5 @@
-import { Board, Ship } from "./Board";
+import { Board, RandomBoard } from "./Classes";
+import { cloneDeep } from "lodash";
 import React from "react";
 import { useState } from "react";
 
@@ -11,13 +12,13 @@ export default function App(): React.ReactElement {
 }
 
 function Game(): React.ReactElement {
-    const randomBoard = new Board();
-    randomBoard.createRandomBoard();
-
-    const [playerBoard, setPlayerBoard] = useState<Array<Array<number>>>(
-        randomBoard.board,
-    );
+    const board: RandomBoard = new RandomBoard();
+    const [playerBoard, setPlayerBoard] = useState<Board>(board);
     const [boardIsPlaced, setBoardIsPlaced] = useState<boolean>(false);
+
+    function handleResetClick(): void {
+        setPlayerBoard(new RandomBoard());
+    }
 
     return (
         <div id="game">
@@ -34,7 +35,12 @@ function Game(): React.ReactElement {
                 >
                     Validate Board
                 </button>
-                <button className="reset-placement">Reset</button>
+                <button
+                    className="reset-placement"
+                    onClick={() => handleResetClick()}
+                >
+                    Reset
+                </button>
                 <div className="ships-container"></div>
             </div>
         </div>
@@ -42,8 +48,8 @@ function Game(): React.ReactElement {
 }
 
 interface PlayerBoardProps {
-    playerBoard: Array<Array<number>>;
-    setPlayerBoard: (newBoard: Array<Array<number>>) => void;
+    playerBoard: Board;
+    setPlayerBoard: (newBoard: Board) => void;
     boardIsPlaced: boolean;
 }
 function PlayerBoard({
@@ -54,11 +60,11 @@ function PlayerBoard({
     function handleSquareClick(key: string): void {
         if (!boardIsPlaced) {
             const [yIndex, xIndex] = key.split(",");
-            const nextBoard = playerBoard.slice();
+            const nextBoard: Board = cloneDeep(playerBoard);
 
-            let currNumber = nextBoard[yIndex][xIndex];
+            let currNumber = nextBoard.grid[yIndex][xIndex];
             currNumber ? (currNumber = 0) : (currNumber = 1);
-            nextBoard[yIndex][xIndex] = currNumber;
+            nextBoard.grid[yIndex][xIndex] = currNumber;
             setPlayerBoard(nextBoard);
         } else {
             return;
@@ -66,7 +72,7 @@ function PlayerBoard({
     }
 
     function getComponentSquares(): Array<React.ReactElement> {
-        return playerBoard
+        return playerBoard.grid
             .map((row, yIndex) => {
                 return row.map((square, xIndex) => {
                     const key: string = `${yIndex},${xIndex}`;
