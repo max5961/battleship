@@ -670,13 +670,18 @@ export class ComputerChooser extends Chooser {
     //                                └ shootAlongCurrentDirection()
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
-            this.gridState.addInvalidCoordsRecursive(this.currentTargetShip);
-            this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
+            console.log("ship is sunk");
+            this.gridState.addInvalidCoordsRecursive(
+                this.memory.currentTargetShip,
+            );
+            this.opponentBoard.sunkenFleet.addShip(
+                this.memory.currentTargetShip,
+            );
             this.resetMemory();
         }
 
         // last shot was a hit, target area is now focused
-        if (this.lastHitCoord) {
+        if (this.memory.lastHitCoord) {
             this.takeFocusedShot();
         } else {
             const coord: Array<number> = this.gridState.getRandomValidCoord();
@@ -699,7 +704,7 @@ export class ComputerChooser extends Chooser {
     }
 
     takeFocusedShot(): void {
-        if (this.currentTargetShip.direction) {
+        if (this.memory.currentTargetShip.direction) {
             this.shootAlongCurrentDirection();
         } else {
             this.shootAndSearchForDirection();
@@ -707,20 +712,20 @@ export class ComputerChooser extends Chooser {
     }
 
     shootAndSearchForDirection(): void {
-        if (!this.lastHitCoord) {
+        if (!this.memory.lastHitCoord) {
             throw new Error("lastHitCoord property is null");
         }
 
         const getRandomDirectionIndex = (): number =>
-            Math.floor(Math.random() * this.possibleDirections.length);
+            Math.floor(Math.random() * this.memory.possibleDirections.length);
 
-        const [lx, ly] = this.lastHitCoord!;
+        const [lx, ly] = this.memory.lastHitCoord!;
         const nextCoord: Array<number> = [];
 
         // take the possibleDirections property and splice at random until a valid coord is found
         while (!nextCoord.length) {
             const index = getRandomDirectionIndex();
-            const [dx, dy] = this.memory.possibleDirections;
+            const [dx, dy] = this.memory.possibleDirections[index];
             this.memory.possibleDirections.splice(index, 1);
             const nx = lx + dx;
             const ny = ly + dy;
@@ -745,10 +750,10 @@ export class ComputerChooser extends Chooser {
     }
 
     shootAlongCurrentDirection(): void {
-        if (!this.lastHitCoord) {
+        if (!this.memory.lastHitCoord) {
             throw new Error("lastHitCoord property is null");
         }
-        if (!this.currentTargetShip.direction) {
+        if (!this.memory.currentTargetShip.direction) {
             throw new Error("currentTargetShip.direction property is null");
         }
 
@@ -756,23 +761,23 @@ export class ComputerChooser extends Chooser {
         let y: number;
         // last shot was a miss (reached beyond the ends of the ship), ship direction was reversed
         // derive dx, dy from the first hit
-        if (this.lastShotMissed) {
-            [x, y] = this.currentTargetShip[0];
-            this.lastShotMissed = false;
+        if (this.memory.lastShotMissed) {
+            [x, y] = this.memory.currentTargetShip.coords[0];
+            this.memory.lastShotMissed = false;
 
             // else keep going along current direction
         } else {
-            [x, y] = this.lastHitCoord;
+            [x, y] = this.memory.lastHitCoord;
         }
-        const [dx, dy] = this.currentTargetShip.direction;
+        const [dx, dy] = this.memory.currentTargetShip.direction;
         const coord = [x + dx, y + dy];
 
         if (!this.shotIsOnTarget(coord)) {
-            this.currentTargetShip.reverseShipDirection();
+            this.memory.currentTargetShip.reverseShipDirection();
             // if the coord is in a spot that cannot contain a ship, skip taking
             // the illogical shot and immediately take the next shot in the reverse direction
             if (!this.gridState.coordIsValid(coord)) {
-                this.lastShotMissed = true;
+                this.memory.lastShotMissed = true;
                 this.shootAlongCurrentDirection();
                 return; // make sure to return early (prevent double shot)
             }
@@ -780,15 +785,5 @@ export class ComputerChooser extends Chooser {
 
         // finally, take the shot
         this.takeShot(coord);
-    }
-}
-
-export class UserChooser {
-    opponentBoard: Board;
-    gridState: GridState;
-
-    constructor(opponentBoard: Board = new Board()) {
-        this.opponentBoard = opponentBoard;
-        this.gridState = new GridState();
     }
 }
