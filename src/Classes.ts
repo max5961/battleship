@@ -1,3 +1,4 @@
+import { ArrayIterator } from "lodash";
 import { getPositiveSortShip } from "./sortShipArray";
 
 export class Utils {
@@ -17,6 +18,15 @@ export class Utils {
         array: Array<Array<number>>,
     ): Array<Array<number>> {
         return getPositiveSortShip(array);
+    }
+
+    static getDirections(): Array<Array<number>> {
+        return [
+            [0, 1],
+            [0, -1],
+            [1, 0],
+            [-1, 0],
+        ];
     }
 }
 
@@ -66,31 +76,6 @@ export class Ship {
         }
     }
 
-    // adds coordinates to this.coords
-    findShipFromStartCoord(startCoord: Array<number>): void {
-        if (!this.direction) {
-            this.updateShipDirection(startCoord);
-        }
-
-        this.coords = [[startCoord[0], startCoord[1]]];
-        const [dx, dy] = this.direction!;
-        let nx = dx + startCoord[0];
-        let ny = dy + startCoord[1];
-        let mappingShip = true;
-        while (mappingShip) {
-            if (
-                (this.parentGrid[nx] && this.parentGrid[nx][ny] === 1) ||
-                (this.parentGrid[nx] && this.parentGrid[nx][ny] === 2)
-            ) {
-                this.coords.push([nx, ny]);
-                nx += dx;
-                ny += dy;
-            } else {
-                mappingShip = false;
-            }
-        }
-    }
-
     getShipCoords(
         coord: Array<number>,
         markers: Array<number>,
@@ -105,7 +90,7 @@ export class Ship {
         }
         let shipCoord: boolean = false;
         for (const marker of markers) {
-            if (this.parentGrid[x][y] === marker) {
+            if (this.parentGrid[x] && this.parentGrid[x][y] === marker) {
                 shipCoord = true;
             }
         }
@@ -115,7 +100,7 @@ export class Ship {
 
         mappedSpaces.add(coord.toString());
         const shipCoords: Array<Array<number>> = [coord];
-        const directions = [[1,0],[-1,0],[0,1],[0,-1]]; // prettier-ignore
+        const directions = [ [1, 0], [-1, 0], [0, 1], [0, -1] ]; // prettier-ignore
         for (const direction of directions) {
             const [dx, dy] = direction;
             const nx = x + dx;
@@ -281,6 +266,36 @@ export class GridState {
         this.takenCoords = new Set();
     }
 
+    addInvalidCoordsRecursive(ship: Ship): void {
+        const shipCoords: Set<string> = new Set();
+        for (const coord of ship.coords) {
+            shipCoords.add(coord.toString());
+        }
+        const directions: Array<Array<number>> = [
+            // left/right/up/down
+            [1, 0],
+            [-1, 0],
+            [0, -1],
+            [0, 1],
+            // diagonal
+            [1, 1],
+            [-1, -1],
+            [1, -1],
+            [-1, 1],
+        ];
+        for (const coord of ship.coords) {
+            for (const dir of directions) {
+                const [cx, cy] = coord;
+                const [dx, dy] = dir;
+                const nx = cx + dx;
+                const ny = cy + dy;
+                if (!shipCoords.has([nx, ny].toString())) {
+                    this.invalidCoords.add([nx, ny].toString());
+                }
+            }
+        }
+    }
+
     addInvalidCoords(ship: Ship): void {
         const invalidCoords: Array<Array<number>> = [];
         if (!ship.direction) {
@@ -330,17 +345,22 @@ export class GridState {
     }
 
     coordIsValid(coord: Array<number>): boolean {
-        return (
-            !this.invalidCoords.has(coord.toString()) &&
-            !this.takenCoords.has(coord.toString()) &&
-            Utils.coordInBounds(coord)
-        );
+        if (this.invalidCoords.has(coord.toString())) {
+            return false;
+        }
+        if (this.takenCoords.has(coord.toString())) {
+            return false;
+        }
+        if (!Utils.coordInBounds(coord)) {
+            return false;
+        }
+        return true;
     }
 
     // return coord or null if no coords available
     tryRandomValidCoord(): Array<number> | null {
         let tries: number = 0;
-        while (tries < 10) {
+        while (tries < 25) {
             const coord = Utils.getRandomCoord();
             if (this.coordIsValid(coord)) {
                 return coord;
@@ -373,16 +393,18 @@ export class SetupValidator {
     boardIsValid(): boolean {
         for (let x = 0; x < 10; x++) {
             for (let y = 0; y < 10; y++) {
-                const coordString: string = [x, y].toString();
-                if (!this.gridState.takenCoords.has(coordString)) {
-                    if (this.gridState.invalidCoords.has(coordString)) {
-                        return false;
-                    } else {
-                        const ship = new Ship(this.board);
-                        ship.findShipFromStartCoord([x, y]);
-                        this.gridState.addInvalidCoords(ship);
-                        this.gridState.addTakenCoords(ship);
-                        this.board.fleet.addShip(ship);
+                if (this.board.grid[x][y] === 1) {
+                    const coordString: string = [x, y].toString();
+                    if (!this.gridState.takenCoords.has(coordString)) {
+                        if (this.gridState.invalidCoords.has(coordString)) {
+                            return false;
+                        } else {
+                            const ship = new Ship(this.board);
+                            ship.coords = this.getEntireShip([x, y]);
+                            this.gridState.addInvalidCoordsRecursive(ship);
+                            this.gridState.addTakenCoords(ship);
+                            this.board.fleet.addShip(ship);
+                        }
                     }
                 }
             }
@@ -390,9 +412,35 @@ export class SetupValidator {
 
         return this.board.fleet.fleetIsValid();
     }
+
+    getEntireShip(coord: Array<number>): Array<Array<number>> {
+        const directions: Array<Array<number>> = [
+            [0, 1],
+            [1, 0],
+        ];
+        let currDir: Array<number> = [];
+        for (const dir of directions) {
+            const [dx, dy] = dir;
+            const [cx, cy] = coord;
+            const nx: number = cx + dx;
+            const ny: number = cy + dy;
+            if (this.board.grid[nx] && this.board.grid[nx][ny] === 1) {
+                currDir = [dx, dy];
+            }
+        }
+        const shipCoords: Array<Array<number>> = [];
+        const [dx, dy] = currDir;
+        let [x, y] = coord;
+        while (this.board.grid[x] && this.board.grid[x][y] === 1) {
+            shipCoords.push([x, y]);
+            x += dx;
+            y += dy;
+        }
+        return shipCoords;
+    }
 }
 
-class RandomSetupCreator {
+export class SetupCreator {
     board: Board;
     gridState: GridState;
 
@@ -404,20 +452,20 @@ class RandomSetupCreator {
     getRandomBoardSetup(): Board {
         let setupIsValid: boolean = false;
         while (!setupIsValid) {
+            this.board = new Board();
+            this.gridState = new GridState();
             this.attemptRandomSetup();
 
             const setupValidator: SetupValidator = new SetupValidator(
                 this.board,
             );
-            if (setupValidator.boardIsValid()) {
-                setupIsValid = true;
-            }
+            setupIsValid = setupValidator.boardIsValid();
         }
         return this.board;
     }
 
     // assigns a random board setup to this.board
-    attemptRandomSetup() {
+    attemptRandomSetup(): void {
         const ships: Array<number> = [5, 4, 4, 3, 3, 3, 2, 2, 2, 2];
         // attempt to make a ship for every shipLength in the Q
         // if no ship is made, an invalid board will be made that will be invalidated by BoardSetupValidator
@@ -425,18 +473,21 @@ class RandomSetupCreator {
         // 2. Attempt to create a ship starting at random coord at every possible direction at random
         // 3. If a ship is made, add it to the fleet. If not, try again until out of tries
         while (ships.length) {
-            const shipLength = ships.shift()!;
-            let tries = 0;
-            let shipCreated = false;
+            const shipLength: number = ships.shift()!;
+
+            let shipCreated: boolean = false;
+            let tries: number = 0;
             while (!shipCreated && tries < 10) {
                 let randomValidCoord: Array<number> | null =
                     this.gridState.tryRandomValidCoord();
                 if (!randomValidCoord) {
+                    // no random valid coord was available (previous ships too
+                    // close to center)
                     break;
                 }
 
                 // try to place ship with valid coord
-                let placementFailures = 0;
+                let placementFailures: number = 0;
                 let ship: Ship | null = null;
                 while (!ship && placementFailures < 5) {
                     ship = this.createShip(randomValidCoord, shipLength);
@@ -457,9 +508,12 @@ class RandomSetupCreator {
                     tries++;
                 } else {
                     shipCreated = true;
+                    this.gridState.addInvalidCoordsRecursive(ship);
+                    this.gridState.addTakenCoords(ship);
                 }
             }
         }
+        this.placeShips();
     }
 
     createShip(startCoord: Array<number>, shipLength: number): Ship | null {
@@ -494,6 +548,15 @@ class RandomSetupCreator {
             }
         }
         return null;
+    }
+
+    placeShips(): void {
+        for (const ship of this.board.fleet.mappedFleet) {
+            for (const coord of ship) {
+                const [x, y] = coord;
+                this.board.grid[x][y] = 1;
+            }
+        }
     }
 }
 
@@ -619,7 +682,7 @@ export class ComputerChooser extends Chooser {
 
     takeTurn(): void {
         if (this.currentTargetShipIsSunk()) {
-            this.gridState.addInvalidCoords(this.currentTargetShip);
+            this.gridState.addInvalidCoordsRecursive(this.currentTargetShip);
             this.opponentBoard.sunkenFleet.addShip(this.currentTargetShip);
             this.resetData();
         }
