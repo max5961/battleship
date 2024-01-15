@@ -2,9 +2,14 @@ import { Board, RandomBoard } from "./Classes";
 import { cloneDeep } from "lodash";
 import React from "react";
 import { useState } from "react";
+import { StartMenu } from "./pages/start-menu";
 
 export default function App(): React.ReactElement {
-    return <></>;
+    return (
+        <>
+            <StartMenu />
+        </>
+    );
 }
 
 function Game(): React.ReactElement {
