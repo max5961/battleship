@@ -1,9 +1,7 @@
-@import "./reset.css";
+@use "./reset.css";
+@use "./_start-menu.scss";
 
 $main-bg: #0000e6;
-$board-bg: #559597;
-$square-taken: #99f1ff;
-$square-empty: #006479;
 
 #root {
     min-height: 100vh;
@@ -13,72 +11,4 @@ $square-empty: #006479;
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-#game {
-    background-color: inherit;
-    border: 3px solid darken($main-bg, 25%);
-    border-radius: 15px;
-    padding: 25px;
-    height: auto;
-    width: auto;
-    display: grid;
-    grid-template-areas:
-        "computer sidebar"
-        "player sidebar";
-    grid-template-rows: repeat(2, 300px);
-    grid-template-columns: 300px 250px;
-    gap: 25px;
-
-    .game-board {
-        background-color: $board-bg;
-        &.computer {
-            grid-area: computer;
-        }
-        &.player {
-            grid-area: player;
-        }
-
-        display: grid;
-        grid-template-rows: repeat(10, 1fr);
-        grid-template-columns: repeat(10, 1fr);
-        gap: 2px;
-
-        .square {
-            background-color: $square-empty;
-
-            &.taken {
-                background-color: $square-taken;
-            }
-        }
-    }
-
-    .sidebar {
-        background-color: pink;
-        grid-area: sidebar;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 5px;
-        padding: 10px;
-
-        button {
-            background-color: green;
-            width: 75%;
-            border-radius: 15px;
-            padding-top: 10px;
-            padding-bottom: 10px;
-
-            &:hover {
-                background-color: darken(green, 10%);
-            }
-        }
-
-        .ships-container {
-            width: 100%;
-            flex-grow: 1;
-            background-color: blue;
-        }
-    }
 }

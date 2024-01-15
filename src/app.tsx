@@ -4,11 +4,7 @@ import React from "react";
 import { useState } from "react";
 
 export default function App(): React.ReactElement {
-    return (
-        <>
-            <Game />
-        </>
-    );
+    return <></>;
 }
 
 function Game(): React.ReactElement {

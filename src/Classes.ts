@@ -801,6 +801,7 @@ export class Game {
     constructor() {
         this.player = null;
         this.cpu = null;
+        this.winner = null;
     }
 
     setPlayer(player: PlayerChooser): void {
@@ -815,15 +816,17 @@ export class Game {
         return this.winner;
     }
 
-    async takeTurns(coord: Array<number>): void {
+    takeTurns(coord: Array<number>): void {
+        if (!this.cpu || !this.player) {
+            throw new Error("Player objects have not been set");
+        }
+
         if (this.winner) {
             console.log(`${this.winner} has won`);
             return;
         }
 
         this.player.takeShot(coord);
-        setTimeout(() => {
-            this.cpu.takeTurn();
-        }, 500);
+        this.cpu.takeTurn();
     }
 }
