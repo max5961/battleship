@@ -765,3 +765,65 @@ export class ComputerChooser extends Chooser {
         this.takeShot(coord);
     }
 }
+
+export class PlayerChooser extends Chooser {
+    public gridState: GridState;
+
+    constructor(opponentBoard: Board) {
+        super(opponentBoard);
+        this.gridState = new GridState();
+    }
+
+    takeShot(coord: Array<number>): void {
+        if (this.gridState.takenCoords.has(coord.toString())) {
+            throw new Error(
+                "Player should not be able to click on a square that has already been clicked",
+            );
+        }
+        this.gridState.takenCoords.add(coord.toString());
+
+        if (this.shotIsOnTarget(coord)) {
+            this.markHit(coord);
+            // check if ship is sank (Ship.getSunkenPartOfShip)
+            // if it is sank
+            // // mapInvalidSpaces around ship
+        } else {
+            this.markMiss(coord);
+        }
+    }
+}
+
+export class Game {
+    private player: PlayerChooser | null;
+    private cpu: ComputerChooser | null;
+    private winner: string | null;
+
+    constructor() {
+        this.player = null;
+        this.cpu = null;
+    }
+
+    setPlayer(player: PlayerChooser): void {
+        this.player = player;
+    }
+
+    setComputer(cpu: ComputerChooser): void {
+        this.cpu = cpu;
+    }
+
+    getWinner(): string | null {
+        return this.winner;
+    }
+
+    async takeTurns(coord: Array<number>): void {
+        if (this.winner) {
+            console.log(`${this.winner} has won`);
+            return;
+        }
+
+        this.player.takeShot(coord);
+        setTimeout(() => {
+            this.cpu.takeTurn();
+        }, 500);
+    }
+}
