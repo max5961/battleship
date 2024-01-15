@@ -7,7 +7,14 @@ import forwardShip from "../images/forward-facing-ship.svg";
 export function StartMenu(): React.ReactElement {
     return (
         <div className="start-menu">
-            <h1>START MENU</h1>
+            <h1>BATTLESHIP</h1>
+            <div className="radar">
+                <div className="cutout"></div>
+                <div className="inner1"></div>
+                <div className="inner2"></div>
+                <div className="inner3"></div>
+                <div className="inner4"></div>
+            </div>
             <div className="images-container">
                 <img src={fighterJet} alt="" className="fighter-jet one" />
                 <img src={fighterJet} alt="" className="fighter-jet two" />
