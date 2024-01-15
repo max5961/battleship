@@ -2,7 +2,7 @@ import React from "react";
 import fighterJet from "../images/fighter-jet1.svg";
 import diagonalLeftShip from "../images/diagonal-left-facing-ship.svg";
 import diagonalRightShip from "../images/diagonal-right-facing-ship.svg";
-import forwardShip from "../images/forward-facing-ship.svg";
+import forwardShip from "../images/forward-facing-ship.png";
 
 export function StartMenu(): React.ReactElement {
     return (

@@ -120,12 +120,12 @@ $main-bg: #0000e6;
                 height: auto;
                 position: absolute;
                 &.one {
-                    top: -25px;
-                    left: 150px;
+                    top: -20px;
+                    left: 200px;
                 }
                 &.two {
                     top: 50px;
-                    left: 425px;
+                    left: 480px;
                 }
             }
             &.forward-ship {
@@ -134,10 +134,10 @@ $main-bg: #0000e6;
             }
             &.diagonal-ship {
                 &.first {
-                    width: 100px;
+                    width: 110px;
                 }
                 &.second {
-                    width: 45px;
+                    width: 75px;
                 }
             }
         }
