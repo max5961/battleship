@@ -74,6 +74,24 @@ describe("BoardValidator.boardIsValid()", () => {
         expect(isValid).toBe(false);
     });
     test("Board should be invalid", () => {
+        const invalidGrid: Array<Array<number>> = [
+            [0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 1, 0, 1, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+        ];
+        const board: Board = new Board(invalidGrid);
+        const boardValidator: BoardValidator = new BoardValidator(board);
+        const isValid: boolean = boardValidator.boardIsValid();
+        expect(isValid).toBe(false);
+    });
+    test("Board should be invalid", () => {
         const validGrid: Array<Array<number>> = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 1, 0, 1, 1, 1, 1, 0, 0, 1],
