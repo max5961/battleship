@@ -6,7 +6,7 @@
 $button-color: #52bbf5;
 // $font-color: #000063;
 $font-color: black;
-$radar-color: #00ff77;
+$radar-color: #08a2cc;
 $main-bg: #0000e6;
 
 .start-menu {
@@ -33,6 +33,14 @@ $main-bg: #0000e6;
         }
     }
 
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
     .radar {
         z-index: 0;
         opacity: 0.4;
@@ -41,7 +49,22 @@ $main-bg: #0000e6;
         position: absolute;
         border-radius: 50%;
         background-color: $radar-color;
-        transform: rotate(-37deg);
+        // transform: rotate(-37deg);
+        animation: spin 8s linear infinite;
+        overflow: hidden;
+
+        .cutout {
+            height: 50%;
+            width: 50%;
+            position: absolute;
+            z-index: 1;
+            border-bottom: 5px solid $main-bg;
+            background: linear-gradient(
+                0.75turn,
+                rgb(0, 0, 0, 0),
+                rgba(0, 0, 0, 1)
+            );
+        }
 
         .inner1,
         .inner2,
@@ -80,14 +103,6 @@ $main-bg: #0000e6;
             background-color: $main-bg;
             height: 10%;
             width: 10%;
-        }
-
-        .cutout {
-            height: 50%;
-            width: 50%;
-            background-color: $main-bg;
-            position: absolute;
-            z-index: 1;
         }
     }
 
