@@ -27,18 +27,31 @@ $main-bg: #0000e6;
     h1 {
         font-size: 100px;
         font-family: "Bungee Shade", sans-serif;
-        transition: all 100ms ease-in-out;
-        &:hover {
-            transform: scale(1.02);
-        }
+        color: #c1dfff;
+        // transition: all 100ms ease-in-out;
+        // &:hover {
+        //     transform: scale(1.02);
+        // }
     }
 
     @keyframes spin {
-        from {
+        0% {
             transform: rotate(0deg);
         }
-        to {
+        100% {
             transform: rotate(360deg);
+        }
+    }
+    @keyframes blink {
+        // blink
+        49% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0;
+        }
+        51% {
+            opacity: 1;
         }
     }
     .radar {
@@ -49,8 +62,7 @@ $main-bg: #0000e6;
         position: absolute;
         border-radius: 50%;
         background-color: $radar-color;
-        // transform: rotate(-37deg);
-        animation: spin 8s linear infinite;
+        animation: spin 6s linear infinite;
         overflow: hidden;
 
         .cutout {
@@ -59,6 +71,7 @@ $main-bg: #0000e6;
             position: absolute;
             z-index: 1;
             border-bottom: 5px solid $main-bg;
+            animation: blink 4s linear infinite;
             background: linear-gradient(
                 0.75turn,
                 rgb(0, 0, 0, 0),
